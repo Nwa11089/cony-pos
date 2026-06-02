@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+</style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-cony">
+<div class="container-fluid px-3">
+<a class="navbar-brand brand-cony" href="#"><span>🍔 CONY · POS</a>
+<div class="d-flex align-items-center gap-2 ms-auto">
+<div class="small-muted text-end d-none d-sm-block">
+<div id="authUserLabel">Sesión activa</div>
+<div id="authStatus">Conectando...</div>
+</div>
+<button class="btn btn-danger" id="btnLogout" type="button">Salir</button>
+</div>
+</div>
+</nav>
+<main class="app-shell container-fluid">
+<div id="loginView" class="view active">
+<div class="row justify-content-center mt-4">
+<div class="col-12 col-md-8 col-lg-5">
+<div class="card-cony p-4">
+<h2 class="section-title mb-3">Ingresar al sistema</h2>
+<div class="mb-3">
+<label class="form-label">Usuario</label>
+<input id="loginUser" type="text" class="form-control" placeholder="Usuario">
+</div>
+<div class="mb-3">
+<label class="form-label">Contraseña</label>
+<input id="loginPass" type="password" class="form-control" placeholder="Contraseña">
+</div>
+<div class="d-grid gap-2">
+<button id="btnLogin" class="btn btn-danger btn-lg">Entrar</button>
+</div>
+<div id="loginFeedback" class="small-muted mt-3">Ingresa tus credenciales para conectar con la API.</div>
+</div>
+</div>
+</div>
+</div>
+<div id="appView" class="hidden">
+<div class="nav-tabs-cony" id="tabBar">
+<button class="tab-btn active" data-view="comanderoView">🧃 Comandero</button>
+<button class="tab-btn" data-view="dashboardView">📊 Dashboard</button>
+<button class="tab-btn" data-view="productosView">📦 Productos</button>
+<button class="tab-btn" data-view="pedidosView">🧾 Pedidos</button>
+<button class="tab-btn" data-view="reportesView">📈 Reportes</button>
+<button class="tab-btn hidden" data-view="usuariosView" id="usuariosTab">👥 Usuarios</button>
+</div>
+<section id="comanderoView" class="view active">
+<div class="command-layout">
+<div>
+<div class="card-cony p-3 mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+<div>
+<div class="section-title mb-1">Comandero</div>
+<div class="small-muted">Selecciona productos por categoría y arma el pedido.</div>
+</div>
+<div class="small-muted" id="commandProductCount">0 productos disponibles</div>
+</div>
+<div class="category-bar" id="categoryFilters"></div>
+<div class="product-grid" id="productGrid"></div>
+</div>
+</div>
+<aside class="card-cony cart-panel">
+<div class="d-flex justify-content-between align-items-center gap-2">
+<div>
+<div class="section-title mb-1">Pedido actual</div>
+<div class="small-muted">Agrega, edita y confirma.</div>
+</div>
+<button class="btn btn-outline-light" id="clearCartBtn">Limpiar</button>
+</div>
+<div id="cartList" class="cart-list"></div>
+<div class="cart-total">
+<div class="cart-total-row">
+<span>Total
+<span id="cartTotal">$0.00
+</div>
+<div class="d-grid gap-2">
+<button class="btn btn-danger btn-lg" id="confirmOrderBtn">Confirmar pedido</button>
+</div>
+</div>
+</aside>
+</div>
+</section>
+<section id="dashboardView" class="view">
+<div class="row g-3 mb-3">
+<div class="col-12 col-sm-6 col-xl-3"><div class="card-cony stat-card"><div class="stat-label">Ventas hoy</div><div class="stat-value" id="statVentasHoy">$0.00</div></div></div>
+<div class="col-12 col-sm-6 col-xl-3"><div class="card-cony stat-card"><div class="stat-label">Pedidos hoy</div><div class="stat-value" id="statPedidosHoy">0</div></div></div>
+<div class="col-12 col-sm-6 col-xl-3"><div class="card-cony stat-card"><div class="stat-label">Productos</div><div class="stat-value" id="statProductos">0</div></div></div>
+<div class="col-12 col-sm-6 col-xl-3"><div class="card-cony stat-card"><div class="stat-label">Pendientes</div><div class="stat-value" id="statPendientes">0</div></div></div>
+</div>
+<div class="card-cony p-3">
+<div class="section-title">Últimos 5 pedidos</div>
+<div class="table-responsive">
+<table class="table table-hover align-middle">
+<thead>
+<tr>
+<th>Folio</th>
+<th>Cliente</th>
+<th>Total</th>
+<th>Estatus</th>
+<th>Fecha</th>
+</tr>
+</thead>
+<tbody id="dashboardRecentOrders"></tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="productosView" class="view">
+<div class="card-cony p-3">
+<div class="toolbar">
+<div class="left">
+<div class="section-title mb-0">Productos</div>
+<input id="searchProductos" type="text" class="form-control" placeholder="Buscar producto..." style="min-width: 250px;">
+</div>
+<div class="right">
+<button class="btn btn-danger" id="btnNuevoProducto">Nuevo producto</button>
+</div>
+</div>
+<div class="table-responsive">
+<table class="table table-hover align-middle">
+<thead>
+<tr>
+<th>ID</th>
+<th>Producto</th>
+<th>Categoría</th>
+<th>Precio</th>
+<th>Disponible</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="productosTableBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="pedidosView" class="view">
+<div class="card-cony p-3">
+<div class="toolbar">
+<div class="left">
+<div class="section-title mb-0">Pedidos</div>
+<button class="btn btn-primary" id="refreshPedidosBtn">Actualizar</button>
+</div>
+</div>
+<div class="table-responsive">
+<table class="table table-hover align-middle">
+<thead>
+<tr>
+<th>Folio</th>
+<th>Cliente</th>
+<th>Teléfono</th>
+<th>Total</th>
+<th>Método</th>
+<th>Estatus</th>
+<th>Fecha</th>
+</tr>
+</thead>
+<tbody id="pedidosTableBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="reportesView" class="view">
+<div class="row g-3">
+<div class="col-12 col-xl-4">
+<div class="card-cony p-3 h-100">
+<div class="section-title">Filtro de ventas</div>
+<div class="mb-3">
+<label class="form-label">Desde</label>
+<input id="reporteDesde" type="date" class="form-control">
+</div>
+<div class="mb-3">
+<label class="form-label">Hasta</label>
+<input id="reporteHasta" type="date" class="form-control">
+</div>
+<div class="d-grid gap-2">
+<button class="btn btn-danger" id="runReportBtn">Consultar rango</button>
+</div>
+</div>
+</div>
+<div class="col-12 col-xl-8">
+<div class="card-cony p-3 mb-3">
+<div class="section-title">Ventas por rango</div>
+<pre id="reporteVentasRango" class="mb-0" style="white-space: pre-wrap; color: var(--text);"></pre>
+</div>
+<div class="card-cony p-3">
+<div class="section-title">Top productos</div>
+<div class="table-responsive">
+<table class="table table-hover align-middle">
+<thead>
+<tr>
+<th>Producto</th>
+<th>Cantidad</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody id="topProductosBody"></tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section id="usuariosView" class="view">
+<div class="card-cony p-3">
+<div class="toolbar">
+<div class="left">
+<div class="section-title mb-0">Usuarios</div>
+</div>
+<div class="right">
+<button class="btn btn-danger" id="btnNuevoUsuario">Nuevo usuario</button>
+</div>
+</div>
+<div class="table-responsive">
+<table class="table table-hover align-middle">
+<thead>
+<tr>
+<th>ID</th>
+<th>Nombre</th>
+<th>Rol</th>
+<th>Proyecto</th>
+<th>Activo</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="usuariosTableBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
+</main>
+<div class="modal fade" id="productoModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered modal-lg">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title" id="productoModalTitle">Nuevo producto</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+<div class="modal-body">
+<form id="productoForm" class="row g-3">
+<input type="hidden" id="productoId">
+<div class="col-md-6">
+<label class="form-label">Nombre</label>
+<input type="text" id="productoNombre" class="form-control" required>
+</div>
+<div class="col-md-3">
+<label class="form-label">Emoji</label>
+<input type="text" id="productoEmoji" class="form-control" maxlength="4">
+</div>
+<div class="col-md-3">
+<label class="form-label">Precio</label>
+<input type="number" id="productoPrecio" class="form-control" min="0" step="0.01" required>
+</div>
+<div class="col-md-6">
+<label class="form-label">Categoría</label>
+<select id="productoCategoria" class="form-select" required></select>
+</div>
+<div class="col-md-6 d-flex align-items-end">
+<div class="form-check form-switch fs-5">
+<input class="form-check-input" type="checkbox" id="productoDisponible" checked>
+<label class="form-check-label" for="productoDisponible">Disponible</label>
+</div>
+</div>
+<div class="col-12">
+<label class="form-label">Descripción</label>
+<textarea id="productoDescripcion" class="form-control" rows="3"></textarea>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-danger" id="saveProductoBtn">Guardar</button>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade" id="usuarioModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title" id="usuarioModalTitle">Nuevo usuario</h5>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+</div>
+<div class="modal-body">
+<form id="usuarioForm" class="row g-3">
+<input type="hidden" id="usuarioId">
+<div class="col-12">
+<label class="form-label">Nombre</label>
+<input type="text" id="usuarioNombre" class="form-control" required>
+</div>
+<div class="col-12">
+<label class="form-label">Contraseña</label>
+<input type="password" id="usuarioPassword" class="form-control" placeholder="Ingresa contraseña para crear o actualizar">
+</div>
+<div class="col-md-6">
+<label class="form-label">Rol</label>
+<select id="usuarioRol" class="form-select">
+<option value="user">user</option>
+<option value="admin">admin</option>
+<option value="superuser">superuser</option>
+</select>
+</div>
+<div class="col-md-6">
+<label class="form-label">Proyecto</label>
+<input type="text" id="usuarioProyecto" class="form-control" value="cony">
+</div>
+<div class="col-12 d-flex align-items-end">
+<div class="form-check form-switch fs-5">
+<input class="form-check-input" type="checkbox" id="usuarioActivo" checked>
+<label class="form-check-label" for="usuarioActivo">Activo</label>
+</div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-outline-light" data-bs-dismiss="modal">Cancelar</button>
+<button type="button" class="btn btn-danger" id="saveUsuarioBtn">Guardar</button>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+.replace(/</g, '&lt;')
+<button class="category-chip ${state.selectedCategory === cat.key ? 'active' : ''}" data-category="${escapeHtml(cat.key)}">
+</button>
+grid.innerHTML = '<div class="empty-box" style="grid-column: 1 / -1;">No hay productos en esta categoría.</div>';
+<button class="product-tile" data-product-id="${product.id}" type="button">
+<div>
+<div class="product-emoji">${escapeHtml(product.emoji || '🍽️')}</div>
+<div class="product-name">${escapeHtml(product.nombre || 'Sin nombre')}</div>
+<div class="product-desc">${escapeHtml(product.descripcion || '')}</div>
+</div>
+<div class="product-price">${money(product.precio)}</div>
+</button>
+if (item.q <= 0) {
+list.innerHTML = '<div class="empty-box">Todavía no agregas productos al pedido.</div>';
+<div class="cart-item">
+<div class="cart-item-top">
+<div>
+<div class="cart-item-name">${escapeHtml(item.emoji || '🍽️')} ${escapeHtml(item.n)}</div>
+<div class="cart-item-sub">${money(item.p)} c/u · Subtotal ${money(item.p * item.q)}</div>
+</div>
+<button class="btn btn-sm btn-outline-danger" data-remove-id="${item.id}">✕</button>
+</div>
+<div class="qty-controls">
+<button class="qty-btn" data-delta-id="${item.id}" data-delta="-1">−</button>
+<div class="qty-value">${item.q}</div>
+<button class="qty-btn" data-delta-id="${item.id}" data-delta="1">+</button>
+</div>
+</div>
+<tr>
+<td>${escapeHtml(p.folio || p.id || '-')}</td>
+<td>${escapeHtml(p.cliente_nombre || 'Mostrador')}</td>
+<td>${money(p.total)}</td>
+<td><span class="badge-status ${getStatusClass(p.estatus)}">${escapeHtml(p.estatus || 'Pendiente')} </td>
+<td>${escapeHtml(p.fecha || '-')}</td>
+</tr>
+$('#dashboardRecentOrders').innerHTML = rows || '<tr><td colspan="5"><div class="empty-box">No hay pedidos recientes.</div></td></tr>';
+<tr>
+<td>${product.id}</td>
+<td>
+<div class="fw-bold">${escapeHtml(product.emoji || '🍽️')} ${escapeHtml(product.nombre)}</div>
+<div class="small-muted">${escapeHtml(product.descripcion || '')}</div>
+</td>
+<td>${escapeHtml(product.categoria || '-')}</td>
+<td>${money(product.precio)}</td>
+<td>${Number(product.disponible) || product.disponible === true ? 'Sí' : 'No'}</td>
+<td>
+<div class="d-flex gap-2 flex-wrap">
+<button class="btn btn-sm btn-primary" data-edit-product="${product.id}">Editar</button>
+<button class="btn btn-sm btn-danger" data-delete-product="${product.id}">Eliminar</button>
+</div>
+</td>
+</tr>
+tbody.innerHTML = '<tr><td colspan="6"><div class="empty-box">No hay productos para mostrar.</div></td></tr>';
+<tr>
+<td>${escapeHtml(pedido.folio || pedido.id || '-')}</td>
+<td>${escapeHtml(pedido.cliente_nombre || 'Mostrador')}</td>
+<td>${escapeHtml(pedido.telefono || '-')}</td>
+<td>${money(pedido.total)}</td>
+<td>${escapeHtml(pedido.metodo_pago || '-')}</td>
+<td>
+<select class="form-select form-select-sm" data-status-id="${pedido.id}" style="min-width: 150px;">
+${['Pendiente','Cocina','Listo','Cancelado'].map(st => `<option value="${st}" ${String(pedido.estatus) === st ? 'selected' : ''}>${st}</option>`).join('')}
+</select>
+</td>
+<td>${escapeHtml(pedido.fecha || '-')}</td>
+</tr>
+tbody.innerHTML = '<tr><td colspan="7"><div class="empty-box">No hay pedidos registrados.</div></td></tr>';
+<tr>
+<td>${user.id}</td>
+<td>${escapeHtml(user.nombre || '-')}</td>
+<td>${escapeHtml(user.rol || '-')}</td>
+<td>${escapeHtml(user.proyecto || '-')}</td>
+<td>${Number(user.activo) || user.activo === true ? 'Sí' : 'No'}</td>
+<td>
+<div class="d-flex gap-2 flex-wrap">
+<button class="btn btn-sm btn-primary" data-edit-user="${user.id}">Editar</button>
+</div>
+</td>
+</tr>
+tbody.innerHTML = '<tr><td colspan="6"><div class="empty-box">No hay usuarios disponibles.</div></td></tr>';
+<tr>
+<td>${escapeHtml(item.nombre || item.producto || item.n || '-')}</td>
+<td>${escapeHtml(item.cantidad || item.qty || 0)}</td>
+<td>${money(item.total || item.importe || 0)}</td>
+</tr>
+tbody.innerHTML = '<tr><td colspan="3"><div class="empty-box">No hay datos para este reporte.</div></td></tr>';
+select.innerHTML = CATEGORY_ORDER.filter(c => c.key !== 'all').map(c => `<option value="${c.key}">${c.label}</option>`).join('');
+</script>
+</body>
+</html>

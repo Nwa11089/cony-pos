@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>CONY - POS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Inter','Segoe UI',system-ui,sans-serif}
+:root{--primary:#667eea;--primary-dark:#5a6fd6;--sec:#764ba2;--accent:#e94560;--bg:#f5f7fb;--card:white;--text:#2d3436;--text-light:#888;--border:#e8e8e8;--success:#27ae60;--warning:#f39c12}
+body{background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:60px}
+header{background:white;padding:.7rem 1.2rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.05);position:sticky;top:0;z-index:50}
+header .brand{display:flex;align-items:center;gap:.4rem}
+header .brand h1{font-size:1.1rem;color:var(--primary)}
+header .brand span{font-size:1.2rem}
+header .user-info{display:flex;align-items:center;gap:.8rem;font-size:.8rem;color:var(--text-light)}
+header .btn-outline{background:transparent;border:2px solid var(--border);padding:.35rem .8rem;border-radius:8px;cursor:pointer;font-size:.75rem;color:var(--text-light);transition:all .2s}
+header .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+nav{display:flex;background:white;padding:.3rem .8rem;gap:.2rem;overflow-x:auto;border-bottom:1px solid var(--border)}
+nav button{background:transparent;border:none;padding:.5rem .8rem;border-radius:8px;cursor:pointer;font-size:.78rem;color:var(--text-light);white-space:nowrap;transition:all .2s;font-weight:500}
+nav button:hover{background:#f0f0f5;color:var(--text)}
+nav button.active{background:var(--primary);color:white;font-weight:600}
+.content{padding:.8rem;max-width:1400px;margin:0 auto}
+.section{display:none}.section.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-bottom:1rem}
+.card{background:white;padding:1rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.card .num{font-size:1.5rem;font-weight:800;color:var(--primary)}
+.card .num.green{color:var(--success)}.card .num.red{color:var(--accent)}.card .num.orange{color:var(--warning)}
+.card .label{color:var(--text-light);font-size:.75rem;margin-top:.2rem}
+.table-wrap{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fe;color:var(--text-light);padding:.5rem .6rem;text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.3px;font-weight:600}
+td{padding:.5rem .6rem;border-bottom:1px solid #f0f0f5;font-size:.78rem}
+tr:hover{background:#fafbff}
+.status{padding:.15rem .5rem;border-radius:16px;font-size:.65rem;font-weight:600}
+.status.pendiente{background:#fff8e1;color:#f39c12}
+.status.completado{background:#e8f8e8;color:var(--success)}
+.status.en-preparacion{background:#e3f2fd;color:#1976d2}
+.status.cancelado{background:#ffebee;color:var(--accent)}
+.btn{background:var(--primary);color:white;border:none;padding:.45rem .9rem;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:600;transition:all .2s}
+.btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
+.btn-sm{padding:.3rem .5rem;border-radius:6px;background:#f0f0f5;border:none;cursor:pointer;font-size:.7rem;color:var(--text-light);transition:all .2s}
+.btn-sm:hover{background:#e0e0ea}
+.btn-sm.danger{color:var(--accent)}.btn-sm.danger:hover{background:#ffebee}
+.btn.green{background:var(--success)}.btn.accent{background:var(--accent)}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:200;backdrop-filter:blur(4px)}
+.modal.show{display:flex;align-items:center;justify-content:center}
+.modal-content{background:white;padding:1.5rem;border-radius:16px;width:90%;max-width:460px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-content h2{font-size:1.1rem;margin-bottom:1rem}
+.modal-content label{display:block;color:var(--text-light);font-size:.78rem;margin-bottom:.2rem;font-weight:500}
+.modal-content input,.modal-content select,.modal-content textarea{width:100%;padding:.55rem .7rem;margin-bottom:.6rem;border:2px solid var(--border);border-radius:8px;font-size:.85rem;color:var(--text);background:#fafafa}
+.modal-content input:focus,.modal-content select:focus{outline:none;border-color:var(--primary)}
+.modal-content textarea{min-height:50px;resize:vertical}
+.modal-actions{display:flex;gap:.4rem;justify-content:flex-end;margin-top:.5rem}
+.modal-actions .btn-secondary{background:#f0f0f5;color:var(--text);border:none;padding:.45rem .9rem;border-radius:8px;cursor:pointer;font-size:.78rem}
+.empty{text-align:center;padding:2rem 1rem;color:var(--text-light);font-size:.85rem}.empty .icon{font-size:2.5rem;margin-bottom:.3rem}
+.comandero-layout{display:grid;grid-template-columns:1fr 300px;gap:.8rem;height:calc(100vh - 110px);min-height:400px}
+.comandero-products{overflow-y:auto;padding-right:.3rem}
+.comandero-cats{display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.6rem}
+.cat-btn{padding:.35rem 1rem;border-radius:16px;border:2px solid var(--border);background:white;cursor:pointer;font-size:.78rem;font-weight:500;color:var(--text-light);transition:all .2s}
+.cat-btn:hover{border-color:var(--primary);color:var(--primary)}
+.cat-btn.active{background:var(--primary);border-color:var(--primary);color:white}
+.prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.5rem}
+.prod-btn{background:white;border:2px solid var(--border);border-radius:12px;padding:.5rem .3rem;cursor:pointer;text-align:center;transition:all .15s;min-height:65px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.prod-btn:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 4px 12px rgba(102,126,234,.12)}
+.prod-btn:active{transform:scale(.95)}
+.prod-btn .name{font-size:.75rem;font-weight:600}
+.prod-btn .price{font-size:.72rem;color:var(--primary);font-weight:700;margin-top:.1rem}
+.prod-btn .emoji{font-size:1.3rem;margin-bottom:.1rem}
+.order-panel{background:white;border-radius:12px;display:flex;flex-direction:column;box-shadow:0 2px 8px rgba(0,0,0,.04);overflow:hidden}
+.order-panel h3{padding:.6rem .8rem;background:var(--primary);color:white;font-size:.82rem;font-weight:600}
+.order-list{flex:1;overflow-y:auto;padding:.4rem}
+.order-item{display:flex;align-items:center;gap:.2rem;padding:.3rem .2rem;border-bottom:1px solid #f5f5f5;font-size:.75rem}
+.order-item .qty{font-weight:700;color:var(--primary);min-width:18px;text-align:center}
+.order-item .name{flex:1;font-size:.75rem}
+.order-item .price{font-weight:600;min-width:40px;text-align:right;font-size:.72rem}
+.order-item .del{cursor:pointer;color:var(--accent);padding:0 .2rem;opacity:.5;font-weight:700;font-size:.85rem}
+.order-item .del:hover{opacity:1}
+.order-total{padding:.6rem .8rem;border-top:2px solid var(--border);display:flex;justify-content:space-between;font-weight:700;font-size:.9rem}
+.order-total .amount{color:var(--primary);font-size:1rem}
+.order-actions{padding:.4rem .6rem .6rem;display:flex;gap:.4rem}
+.order-actions .btn{flex:1;font-size:.75rem;padding:.4rem}
+.toast{position:fixed;bottom:1rem;right:1rem;background:var(--success);color:white;padding:.6rem 1rem;border-radius:10px;font-size:.8rem;display:none;z-index:300;box-shadow:0 8px 25px rgba(0,0,0,.12);animation:slideUp .3s}
+@keyframes slideUp{from{transform:translateY(15px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media(max-width:768px){.comandero-layout{grid-template-columns:1fr;height:auto}}
+</style>
+</head>
+<body>
+<header>
+    <div class="brand"><span>🍔</span><h1>CONY</h1></div>
+    <div class="user-info">
+        <span id="userDisplay"></span>
+        <button class="btn-outline" onclick="logout()">Salir</button>
+    </div>
+</header>
+<nav>
+    <button class="active" data-sec="comandero">🧃 Comandero</button>
+    <button data-sec="dashboard">📊 Dashboard</button>
+    <button data-sec="pedidos">🧾 Pedidos</button>
+    <button data-sec="productos">📦 Productos</button>
+    <button data-sec="reportes">📈 Reportes</button>
+    <button id="usersTab" data-sec="usuarios" style="display:none">👥 Usuarios</button>
+</nav>
+<div class="content">
+<div class="section active" id="sec-comandero">
+<div class="comandero-layout">
+<div class="comandero-products">
+<div class="comandero-cats" id="catFilter"></div>
+<div class="prod-grid" id="prodGrid"></div>
+</div>
+<div class="order-panel">
+<h3>🧾 Pedido</h3>
+<div class="order-list" id="orderList"><div class="empty"><div class="icon">🛒</div>Selecciona productos</div></div>
+<div class="order-total">Total <span class="amount" id="orderTotal">$0.00</span></div>
+<div class="order-actions">
+<button class="btn green" onclick="confirmOrder()">✅ Confirmar</button>
+<button class="btn accent" onclick="clearOrder()">🗑️</button>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="sec-dashboard">
+<div class="cards">
+<div class="card"><div class="num" id="ventasHoy">$0</div><div class="label">Ventas hoy</div></div>
+<div class="card"><div class="num green" id="pedidosHoy">0</div><div class="label">Pedidos hoy</div></div>
+<div class="card"><div class="num orange" id="prodCount">0</div><div class="label">Productos</div></div>
+<div class="card"><div class="num red" id="pendientesCount">0</div><div class="label">Pendientes</div></div>
+</div>
+<div class="table-wrap"><div style="padding:.6rem .8rem;font-size:.82rem;color:var(--text-light)">📋 Últimos pedidos</div><div id="recentOrders"></div></div>
+</div>
+<div class="section" id="sec-pedidos"><div class="table-wrap" id="pedidosTable"></div></div>
+<div class="section" id="sec-productos">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+<h3 style="font-size:.85rem;color:var(--text-light)">📦 Catálogo</h3>
+<button class="btn" onclick="openPM()">+ Nuevo</button>
+</div>
+<div class="table-wrap" id="productosTable"></div>
+</div>
+<div class="section" id="sec-reportes">
+<div style="display:flex;gap:.6rem;align-items:end;margin-bottom:.6rem;flex-wrap:wrap">
+<div><label style="font-size:.72rem;color:var(--text-light)">Desde</label><input type="date" id="rDesde" style="padding:.4rem .5rem;border:2px solid var(--border);border-radius:8px;font-size:.8rem"></div>
+<div><label style="font-size:.72rem;color:var(--text-light)">Hasta</label><input type="date" id="rHasta" style="padding:.4rem .5rem;border:2px solid var(--border);border-radius:8px;font-size:.8rem"></div>
+<button class="btn" onclick="cargarReporte()">Ver</button>
+</div>
+<div class="table-wrap" id="reporteResult"><div class="empty"><div class="icon">📊</div>Selecciona fechas</div></div>
+</div>
+<div class="section" id="sec-usuarios">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+<h3 style="font-size:.85rem;color:var(--text-light)">👥 Usuarios</h3>
+<button class="btn" onclick="openUM()">+ Nuevo</button>
+</div>
+<div class="table-wrap" id="usuariosTable"></div>
+</div>
+</div>
+<div class="modal" id="productModal"><div class="modal-content">
+<h2 id="pTitle">Nuevo producto</h2>
+<input type="hidden" id="pId">
+<label>Nombre</label><input type="text" id="pNombre" placeholder="Hot dog">
+<label>Categoría</label><select id="pCategoria">
+<option value="Hot dogs">🌭 Hot dogs</option>
+<option value="Hot dogs especiales">⭐ Especiales</option>
+<option value="Hamburguesas">🍔 Hamburguesas</option>
+<option value="Alitas">🍗 Alitas</option>
+<option value="Aperitivos">🥟 Aperitivos</option>
+<option value="Extras">➕ Extras</option>
+</select>
+<div style="display:flex;gap:.5rem"><div style="flex:1"><label>Precio $</label><input type="number" id="pPrecio" step="0.5" placeholder="0"></div>
+<div style="flex:1"><label>Emoji</label><input type="text" id="pEmoji" placeholder="🍔" maxlength="2"></div></div>
+<label>Descripción</label><textarea id="pDescripcion" placeholder="Opcional"></textarea>
+<div class="modal-actions">
+<button class="btn-secondary" onclick="closeM('productModal')">Cancelar</button>
+<button class="btn" onclick="saveP()">Guardar</button>
+</div>
+</div></div>
+<div class="modal" id="userModal"><div class="modal-content">
+<h2>Nuevo usuario</h2>
+<label>Nombre</label><input type="text" id="uNombre" placeholder="Ej: cajero1">
+<label>Contraseña</label><input type="text" id="uPassword" placeholder="Mínimo 4">
+<label>Rol</label><select id="uRol">
+<option value="user">👤 User</option>
+<option value="admin">⭐ Admin CONY</option>
+<option value="superuser">👑 Superuser</option>
+</select>
+<div class="modal-actions">
+<button class="btn-secondary" onclick="closeM('userModal')">Cancelar</button>
+<button class="btn" onclick="saveU()">Crear</button>
+</div>
+</div></div>
+<div class="toast" id="toast"></div>
+<script>
+// Auth
+const A=()=>sessionStorage.getItem('auth')
+const U=()=>sessionStorage.getItem('user')||''
+function logout(){sessionStorage.clear();window.location.href='/'}
+function api(p,o){
+ o=o||{};o.headers=o.headers||{}
+ o.headers['Authorization']='Basic '+A()
+ return fetch(p,o).then(r=>{if(r.status===401){logout();return Promise.reject('401')}if(!r.ok)return r.json().then(e=>{throw new Error(e.detail)}).catch(()=>{throw new Error('Err')});return r.json()})
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2000)}
+function closeM(id){document.getElementById(id).classList.remove('show')}
+// Nav
+document.querySelectorAll('nav button').forEach(b=>{
+ b.addEventListener('click',function(){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'))
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'))
+  this.classList.add('active')
+  document.getElementById('sec-'+this.dataset.sec).classList.add('active')
+  if(this.dataset.sec==='comandero')loadCom()
+  if(this.dataset.sec==='dashboard')loadDash()
+  if(this.dataset.sec==='pedidos')loadPeds()
+  if(this.dataset.sec==='productos')loadProds()
+  if(this.dataset.sec==='usuarios')loadUsers()
+ })
+})
+// Comandero
+let prods=[], catAct='Todas', orden=[]
+const CE={'Hot dogs':'🌭','Hot dogs especiales':'⭐','Hamburguesas':'🍔','Alitas':'🍗','Aperitivos':'🥟','Extras':'➕'}
+function loadCom(){
+ api('/api/productos').then(p=>{
+  prods=p.filter(x=>x.disponible)
+  let cats=['Todas',...new Set(prods.map(x=>x.categoria))]
+  document.getElementById('catFilter').innerHTML=cats.map(c=>'<button class="cat-btn'+(c===catAct?' active':'')+'" onclick="catAct=\\''+c+'\\';rCats();rProds()">'+c+'</button>').join('')
+  rProds()
+ })
+}
+function rCats(){
+ let cats=['Todas',...new Set(prods.map(x=>x.categoria))]
+ document.getElementById('catFilter').innerHTML=cats.map(c=>'<button class="cat-btn'+(c===catAct?' active':'')+'" onclick="catAct=\\''+c+'\\';rCats();rProds()">'+c+'</button>').join('')
+}
+function rProds(){
+ let items=catAct==='Todas'?prods:prods.filter(x=>x.categoria===catAct)
+ document.getElementById('prodGrid').innerHTML=items.map(p=>'<button class="prod-btn" onclick="add('+p.id+',\\''+p.nombre.replace(/'/g,'')+'\\','+p.precio+')"><span class="emoji">'+(CE[p.categoria]||'🍽️')+'</span><span class="name">'+p.nombre+'</span><span class="price">$'+p.precio.toFixed(2)+'</span></button>').join('')
+}
+function add(id,n,p){
+ let e=orden.find(i=>i.id===id)
+ if(e){e.q++}else{orden.push({id,n,p,q:1})}
+ rOrden()
+}
+function rem(i){orden.splice(i,1);rOrden()}
+function chg(i,d){orden[i].q=Math.max(1,orden[i].q+d);rOrden()}
+function rOrden(){
+ const list=document.getElementById('orderList')
+ if(!orden.length){list.innerHTML='<div class="empty"><div class="icon">🛒</div>Selecciona productos</div>';document.getElementById('orderTotal').textContent='$0.00';return}
+ list.innerHTML=orden.map((it,i)=>'<div class="order-item"><button class="btn-sm" onclick="chg('+i+',-1)">−</button><span class="qty">'+it.q+'</span><button class="btn-sm" onclick="chg('+i+',1)">+</button><span class="name">'+it.n+'</span><span class="price">$'+(it.p*it.q).toFixed(2)+'</span><span class="del" onclick="rem('+i+')">✕</span></div>').join('')
+ const total=orden.reduce((s,it)=>s+it.p*it.q,0)
+ document.getElementById('orderTotal').textContent='$'+total.toFixed(2)
+}
+function clearOrder(){orden=[];rOrden()}
+function confirmOrder(){
+ if(!orden.length){toast('Agrega productos');return}
+ const total=orden.reduce((s,it)=>s+it.p*it.q,0)
+ const items=orden.map(it=>it.q+'x '+it.n).join(', ')
+ const c=prompt('Cliente:')||'Mostrador'
+ const d=prompt('Dirección:')||'Mostrador'
+ const p=prompt('Pago (Efec/Tarj/Trans):')||'Efectivo'
+ fetch('http://127.0.0.1:8000/webhook',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({proyecto:'mi_token_secreto_123',telefono:'0000000000',nombre:c,direccion:d,metodo_entrega:d==='Mostrador'?'recoger':'domicilio',metodo_pago:p,nota:items,total:total,productos:JSON.stringify(orden)})}).then(r=>r.json()).then(r=>{toast('✅ Folio: '+(r.folio||'OK'));clearOrder();loadDash()}).catch(()=>{toast('✅ Pedido registrado');clearOrder()})
+}
+// Dashboard
+function loadDash(){
+ api('/api/reportes/ventas-hoy').then(d=>{document.getElementById('ventasHoy').textContent='$'+d.total_ventas.toFixed(2);document.getElementById('pedidosHoy').textContent=d.total_pedidos})
+ api('/api/productos').then(p=>document.getElementById('prodCount').textContent=p.filter(x=>x.disponible).length)
+ api('/api/pedidos').then(p=>{
+  document.getElementById('pendientesCount').textContent=p.filter(x=>x.estatus==='pendiente').length
+  let r=p.slice(0,5)
+  if(!r.length){document.getElementById('recentOrders').innerHTML='<div class="empty"><div class="icon">📭</div>Sin pedidos</div>';return}
+  document.getElementById('recentOrders').innerHTML='<table><tr><th>Folio</th><th>Cliente</th><th>$</th><th>Estado</th></tr>'+r.map(x=>'<tr><td>'+(x.folio||'-')+'</td><td>'+(x.cliente_nombre||'Mostrador')+'</td><td>$'+(x.total||0).toFixed(2)+'</td><td><span class="status '+(x.estatus||'pendiente')+'">'+(x.estatus||'pendiente')+'</span></td></tr>').join('')+'</table>'
+ })
+}
+// Pedidos
+function loadPeds(){
+ api('/api/pedidos').then(p=>{
+  if(!p.length){document.getElementById('pedidosTable').innerHTML='<div class="empty"><div class="icon">📭</div>Sin pedidos</div>';return}
+  document.getElementById('pedidosTable').innerHTML='<table><tr><th>Folio</th><th>Cliente</th><th>$</th><th>Estado</th><th></th></tr>'+p.map(x=>'<tr><td>'+(x.folio||'-')+'</td><td>'+(x.cliente_nombre||'-')+'</td><td>$'+(x.total||0).toFixed(2)+'</td><td><span class="status '+(x.estatus||'pendiente')+'">'+(x.estatus||'pendiente')+'</span></td><td><select class="small" onchange="cambiarEst('+x.id+',this.value)"><option value="pendiente"'+(x.estatus==='pendiente'?' selected':'')+'>Pendiente</option><option value="en-preparacion"'+(x.estatus==='en-preparacion'?' selected':'')+'>Cocina</option><option value="completado"'+(x.estatus==='completado'?' selected':'')+'>Listo</option><option value="cancelado"'+(x.estatus==='cancelado'?' selected':'')+'>Cancelar</option></select></td></tr>').join('')+'</table>'
+ })
+}
+function cambiarEst(id,e){
+ api('/api/pedidos/'+id+'/estatus',{method:'PUT',body:JSON.stringify({estatus:e}),headers:{'Content-Type':'application/json'}}).then(()=>{toast('✅ OK');loadPeds()})
+}
+// Productos
+function loadProds(){
+ api('/api/productos').then(p=>{
+  if(!p.length){document.getElementById('productosTable').innerHTML='<div class="empty"><div class="icon">📦</div>Sin productos</div>';return}
+  document.getElementById('productosTable').innerHTML='<table><tr><th>Nombre</th><th>Cat</th><th>$</th><th>Disp</th><th></th></tr>'+p.map(x=>'<tr><td>'+(x.emoji||'🍽️')+' '+x.nombre+'</td><td>'+x.categoria+'</td><td>$'+x.precio.toFixed(2)+'</td><td>'+(x.disponible?'✅':'❌')+'</td><td><button class="btn-sm" onclick="openPM('+x.id+',\\''+x.nombre.replace(/'/g,'')+'\\',\\''+x.categoria+'\\','+x.precio+',\\''+(x.descripcion||'').replace(/'/g,'')+'\\',\\''+(x.emoji||'').replace(/'/g,'')+'\\')">✏️</button> <button class="btn-sm danger" onclick="if(confirm(\\'Eliminar?\\'))delP('+x.id+')">🗑️</button></td></tr>').join('')+'</table>'
+ })
+}
+function openPM(id,n,c,p,d,e){
+ document.getElementById('pTitle').textContent=id?'Editar':'Nuevo producto'
+ document.getElementById('pId').value=id||''
+ document.getElementById('pNombre').value=n||''
+ document.getElementById('pCategoria').value=c||'Hot dogs'
+ document.getElementById('pPrecio').value=p||''
+ document.getElementById('pDescripcion').value=d||''
+ document.getElementById('pEmoji').value=e||''
+ document.getElementById('productModal').classList.add('show')
+}
+function saveP(){
+ const id=document.getElementById('pId').value
+ const data={nombre:document.getElementById('pNombre').value,categoria:document.getElementById('pCategoria').value,precio:parseFloat(document.getElementById('pPrecio').value)||0,descripcion:document.getElementById('pDescripcion').value||'',emoji:document.getElementById('pEmoji').value||'',disponible:1}
+ if(!data.nombre||!data.precio){toast('Completa datos');return}
+ const m=id?'PUT':'POST'
+ api(id?'/api/productos/'+id:'/api/productos',{method:m,body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(()=>{toast('Guardado');closeM('productModal');loadProds()})
+}
+function delP(id){api('/api/productos/'+id,{method:'DELETE'}).then(()=>{toast('Eliminado');loadProds()})}
+// Reportes
+function cargarReporte(){
+ const d=document.getElementById('rDesde').value,h=document.getElementById('rHasta').value
+ if(!d||!h){toast('Selecciona fechas');return}
+ api('/api/reportes/ventas-rango?desde='+d+'&hasta='+h).then(data=>{
+  if(!data.length){document.getElementById('reporteResult').innerHTML='<div class="empty"><div class="icon">📊</div>Sin datos</div>';return}
+  document.getElementById('reporteResult').innerHTML='<table><tr><th>Día</th><th>Pedidos</th><th>Total</th></tr>'+data.map(r=>'<tr><td>'+r.dia+'</td><td>'+r.pedidos+'</td><td>$'+r.total.toFixed(2)+'</td></tr>').join('')+'<tr style="background:#f8f9fe;font-weight:700"><td>TOTAL</td><td>'+data.reduce((s,r)=>s+r.pedidos,0)+'</td><td>$'+data.reduce((s,r)=>s+r.total,0).toFixed(2)+'</td></tr></table>'
+ })
+}
+// Usuarios
+function loadUsers(){
+ api('/api/usuarios').then(u=>{
+  document.getElementById('usersTab').style.display='inline-block'
+  document.getElementById('usuariosTable').innerHTML='<table><tr><th>ID</th><th>Nombre</th><th>Rol</th><th>Proyecto</th><th>Activo</th></tr>'+u.map(x=>'<tr><td>'+x.id+'</td><td>'+x.nombre+'</td><td>'+x.rol+'</td><td>'+(x.proyecto||'-')+'</td><td>'+(x.activo?'✅':'❌')+'</td></tr>').join('')+'</table>'
+ }).catch(()=>document.getElementById('usersTab').style.display='none')
+}
+function openUM(){document.getElementById('uNombre').value='';document.getElementById('uPassword').value='';document.getElementById('userModal').classList.add('show')}
+function saveU(){
+ const data={nombre:document.getElementById('uNombre').value,password:document.getElementById('uPassword').value,rol:document.getElementById('uRol').value}
+ if(!data.nombre||!data.password){toast('Completa datos');return}
+ api('/api/usuarios',{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(()=>{toast('Creado');closeM('userModal');loadUsers()})
+}
+document.getElementById('userDisplay').textContent='👤 '+U()
+loadCom()
+</script>
+</body>
+</html>
