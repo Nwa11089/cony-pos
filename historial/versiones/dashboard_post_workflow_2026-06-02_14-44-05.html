@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CONY - POS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body { background: #1a1a2e; color: #eee; font-family: Segoe UI, system-ui, sans-serif; }
+    .navbar { background: #16213e !important; border-bottom: 2px solid #0f3460; }
+    .navbar-brand { font-weight: 800; color: #e94560 !important; font-size: 1.2rem; }
+    .nav-link { color: #a0a0b0 !important; font-weight: 500; }
+    .nav-link:hover, .nav-link.active { color: #e94560 !important; }
+    .card { background: #16213e; border: 1px solid #0f3460; border-radius: 12px; color: #eee; }
+    .card .num { font-size: 1.8rem; font-weight: 800; color: #e94560; }
+    .card .label { color: #888; font-size: 0.8rem; }
+    .table { color: #ddd; margin: 0; }
+    .table th { background: #0f3460; color: #e94560; border-color: #1a1a2e; }
+    .table td { border-color: #1a1a3e; }
+    .table-hover tbody tr:hover { background: #1a1a4e; color: #fff; }
+    .btn-danger { background: #e94560; border: none; border-radius: 8px; }
+    .btn-primary { background: #0f3460; border: none; border-radius: 8px; }
+    .btn-primary:hover { background: #1a5276; }
+    .modal-content { background: #16213e; border: 1px solid #0f3460; color: #eee; border-radius: 12px; }
+    .modal-header { border-bottom: 1px solid #0f3460; }
+    .modal-header .btn-close { filter: invert(1); }
+    .form-control, .form-select { background: #1a1a2e; border: 1px solid #0f3460; color: #eee; border-radius: 8px; }
+    .form-control:focus, .form-select:focus { background: #1a1a3e; border-color: #e94560; box-shadow: 0 0 0 2px rgba(233,69,96,.2); color: #eee; }
+    .badge-pendiente { background: #f39c12; color: #000; }
+    .badge-completado { background: #27ae60; color: #fff; }
+    .badge-preparacion { background: #3498db; color: #fff; }
+    .badge-cancelado { background: #e74c3c; color: #fff; }
+    .badge-warning { background: #f39c12; color: #fff; }
+    footer { text-align: center; padding: 1rem; color: #555; font-size: 0.8rem; }
+    .tab-content { padding-top: 1rem; }
+
+    .comandero-toolbar { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem; }
+    .cat-btn {
+      border: 1px solid #0f3460;
+      background: #1a1a2e;
+      color: #eee;
+      border-radius: 999px;
+      padding: .85rem 1rem;
+      font-weight: 700;
+      min-height: 52px;
+    }
+    .cat-btn.active { background: #e94560; border-color: #e94560; color: #fff; }
+    .comandero-layout { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 1rem; align-items: start; }
+    .productos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 1rem; }
+    .producto-btn {
+      background: #16213e;
+      border: 1px solid #0f3460;
+      border-radius: 16px;
+      color: #fff;
+      min-height: 160px;
+      padding: 1rem;
+      text-align: left;
+      transition: .15s ease;
+      width: 100%;
+    }
+    .producto-btn:hover { border-color: #e94560; transform: translateY(-2px); }
+    .producto-emoji { font-size: 2rem; line-height: 1; margin-bottom: .5rem; }
+    .producto-nombre { font-weight: 800; font-size: 1rem; line-height: 1.2; }
+    .producto-precio { margin-top: .75rem; color: #ffb8c4; font-weight: 700; }
+    .carrito-panel { position: sticky; top: 1rem; }
+    .carrito-item { background: #1a1a2e; border: 1px solid #0f3460; border-radius: 14px; padding: .85rem; margin-bottom: .75rem; }
+    .carrito-top { display: flex; justify-content: space-between; gap: .75rem; }
+    .carrito-nombre { font-weight: 700; }
+    .carrito-sub { color: #999; font-size: .85rem; }
+    .qty-wrap { display: flex; align-items: center; gap: .5rem; margin-top: .75rem; }
+    .qty-btn {
+      width: 40px; height: 40px; border-radius: 10px; border: 1px solid #0f3460;
+      background: #16213e; color: #fff; font-size: 1.1rem; font-weight: 700;
+    }
+    .qty-num { min-width: 28px; text-align: center; font-weight: 800; }
+    .carrito-total { border-top: 1px solid #0f3460; padding-top: 1rem; margin-top: 1rem; }
+    .carrito-total-row { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 800; margin-bottom: 1rem; }
+    .placeholder-empty { color: #888; text-align: center; padding: 1rem; border: 1px dashed #0f3460; border-radius: 12px; }
+
+    @media (max-width: 992px) {
+      .comandero-layout { grid-template-columns: 1fr; }
+      .carrito-panel { position: static; }
+    }
+    @media (max-width: 576px) {
+      .productos-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .cat-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid px-3">
+      <span class="navbar-brand"><i class="bi bi-shop"></i> CONY</span>
+      <div class="d-flex align-items-center gap-3">
+        <span id="relojNav" style="color:#888;font-size:.75rem;font-family:monospace"></span>
+        <span style="color:#888;font-size:.8rem"><i class="bi bi-person-circle"></i> <span id="navUser"></span></span>
+        <button class="btn btn-outline-success btn-sm" id="btnAbrirCorteNav" onclick="abrirCorte()" style="display:none"><i class="bi bi-cash-coin"></i> Abrir Corte</button>
+        <button class="btn btn-outline-warning btn-sm" id="btnCerrarCorteNav" onclick="cerrarCorte()" style="display:none"><i class="bi bi-lock"></i> Cerrar Corte</button>
+        <button class="btn btn-outline-light btn-sm" id="btnAdmin" onclick="abrirAdmin()" style="display:none"><i class="bi bi-gear"></i> Admin</button>
+        <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
+      </div>
+    </div>
+  </nav>
+
+  <ul class="nav nav-tabs px-3 pt-2" style="border-bottom-color:#0f3460" id="mainTabs">
+    <li class="nav-item"><button class="nav-link active" onclick="showTab('comandero',this)"><i class="bi bi-grid"></i> Comandero</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="showTab('dashboard',this)"><i class="bi bi-speedometer2"></i> Dashboard</button></li>
+    <li class="nav-item" id="productosTabLi"><button class="nav-link" onclick="showTab('productos',this)"><i class="bi bi-box-seam"></i> Productos</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="showTab('pedidos',this)"><i class="bi bi-receipt"></i> Pedidos</button></li>
+    <li class="nav-item" id="reportesTabLi"><button class="nav-link" onclick="showTab('reportes',this)"><i class="bi bi-graph-up"></i> Reportes</button></li>
+    <li class="nav-item" id="usersTabLi" style="display:none"><button class="nav-link" onclick="showTab('usuarios',this)"><i class="bi bi-people"></i> Usuarios</button></li>
+  </ul>
+
+  <!-- MODAL ARQUEO DE CAJA -->
+<div class="modal" id="modalArqueoCaja" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="border:none">
+        <h5 class="modal-title" style="color:#e94560"><i class="bi bi-cash-stack"></i> Arqueo de caja — Corte #<span id="arqueoCorteNum"></span></h5>
+      </div>
+      <div class="modal-body">
+        <p style="color:#aaa;margin-bottom:1rem">Registra el conteo físico de la caja. Fondo inicial: <strong id="arqueoFondoInicial">$0.00</strong></p>
+        <div class="row g-2">
+          <div class="col-8"><strong style="color:#ccc">Denominación</strong></div>
+          <div class="col-4"><strong style="color:#ccc">Cantidad</strong></div>
+        </div>
+        <hr style="border-color:#333;margin:.5rem 0">
+        <div class="row g-2 mb-1 align-items-center">
+          <div class="col-8"><span style="font-size:1.1rem">💵 $1,000</span></div>
+          <div class="col-4"><input type="text" inputmode="numeric" id="arq_1000" class="form-control form-control-sm text-center" oninput="autoCalcularArqueo()"></div>
+        </div>
+        <div class="row g-2 mb-1 align-items-center">
+          <div class="col-8"><span style="font-size:1.1rem">💵 $500</span></div>
+          <div class="col-4"><input type="text" inputmode="numeric" id="arq_500" class="form-control form-control-sm text-center" oninput="autoCalcularArqueo()"></div>
+        </div>
+        <div class="row g-2 mb-1 align-items-center">
+          <div class="col-8"><span style="font-size:1.1rem">💵 $200</span></div>
+          <div class="col-4"><input type="text" inputmode="numeric" id="arq_200" class="form-control form-control-sm text-center" oninput="autoCalcularArqueo()"></div>
+        </div>
+        <div class="row g-2 mb-1 align-items-center">
+          <div class="col-8"><span style="font-size:1.1rem">💵 $100</span></div>
+          <div class="col-4"><input type="text" inputmode="numeric" id="arq_100" class="form-control form-control-sm text-center" oninput="autoCalcularArqueo()"></div>
+        </div>
+        <div class="row g-2 mb-1 align-items-center">
+          <div class="col-8"><span style="font-size:1.1rem">💵 $50</span></div>
+          <div class="col-4"><input type="text" inputmode="numeric" id="arq_50" class="form-control form-control-sm text-center" oninput="autoCalcularArqueo()"></div>
+        </div>
+        <div class="row g-2 mb-1 align-items-center">
+          <div class="col-8"><span style="font-size:1.1rem">💵 $20</span></div>
+          <div class="col-4"><input type="text" inputmode="numeric" id="arq_20" class="form-control form-control-sm text-center" oninput="autoCalcularArqueo()"></div>
+        </div>
+        <hr style="border-color:#333;margin:.5rem 0">
+        <div class="row g-2 mb-2 align-items-center">
+          <div class="col-8"><span style="font-size:1.1rem">🪙 Monedas ($1, $2, $5, $10, fracciones)</span></div>
+          <div class="col-4"><input type="text" inputmode="decimal" id="arqueoMonedas" class="form-control form-control-sm text-center" placeholder="0.00" oninput="autoCalcularArqueo()"></div>
+        </div>
+        <div class="row g-2 mb-1">
+          <div class="col-8" style="font-size:.85rem;color:#888">Fondo inicial</div>
+          <div class="col-4" style="font-size:.85rem;color:#888" id="arqueoFondoDisplay">$0.00</div>
+        </div>
+        <div class="row g-2 mb-1">
+          <div class="col-8" style="font-size:1rem;font-weight:700;color:#e94560">TOTAL EN CAJA</div>
+          <div class="col-4" style="font-size:1.3rem;font-weight:700;color:#e94560" id="arqueoTotalCalculado">$0.00</div>
+        </div>
+        <input type="hidden" id="arqueoTotalHidden" value="0.00">
+        <div class="mt-2">
+          <label class="form-label" style="color:#888;font-size:.85rem">Observaciones</label>
+          <input type="text" id="arqueoObs" class="form-control form-control-sm" placeholder="Opcional...">
+        </div>
+        <p id="errorArqueo" style="color:#e94560;font-size:.85rem;display:none;margin-top:.5rem"></p>
+      </div>
+      <div class="modal-footer" style="border:none;justify-content:center">
+        <button class="btn btn-secondary btn-lg px-4" onclick="bootstrap.Modal.getInstance(document.getElementById('modalArqueoCaja')).hide()" style="border-radius:50px">Cancelar</button>
+        <button class="btn btn-danger btn-lg px-5" onclick="confirmarArqueo()" style="border-radius:50px">
+          <i class="bi bi-check-lg"></i> Cerrar corte
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <!-- MODAL APERTURA DE CORTE -->
+  <div class="modal" id="modalAbrirCorte" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header" style="border:none">
+          <h5 class="modal-title" style="color:#e94560"><i class="bi bi-cash-coin"></i> Apertura de caja</h5>
+        </div>
+        <div class="modal-body text-center">
+          <div style="font-size:3rem;margin-bottom:.5rem">💰</div>
+          <h5 id="saludoApertura" style="font-weight:700">¡Hola, <span id="userNameApertura"></span>!</h5>
+          <p style="color:#aaa;margin-bottom:1.5rem">Indícame tu <strong>fondo de caja</strong> para abrir el turno.</p>
+          <div class="d-flex justify-content-center gap-2 mb-3">
+            <button class="btn btn-outline-light btn-sm" onclick="setFondoRapido(200)">$200</button>
+            <button class="btn btn-outline-light btn-sm" onclick="setFondoRapido(500)">$500</button>
+            <button class="btn btn-outline-light btn-sm" onclick="setFondoRapido(1000)">$1,000</button>
+            <button class="btn btn-outline-light btn-sm" onclick="setFondoRapido(0)">$0</button>
+          </div>
+          <div class="row justify-content-center">
+            <div class="col-8">
+              <input type="number" id="inputFondoApertura" class="form-control form-control-lg text-center" placeholder="Fondo inicial" min="0" step="any" value="500" style="font-size:1.5rem;font-weight:700">
+            </div>
+          </div>
+          <p id="errorFondoApertura" style="color:#e94560;font-size:.85rem;display:none;margin-top:.25rem"></p>
+        </div>
+        <div class="modal-footer" style="border:none;justify-content:center">
+          <button class="btn btn-danger btn-lg px-5" onclick="ejecutarApertura()" style="border-radius:50px">
+            <i class="bi bi-check-lg"></i> Abrir caja
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid px-3 tab-content">
+    <div class="tab-pane active show" id="tab-comandero">
+      <div class="comandero-layout">
+        <div>
+          <div class="card p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+              <h6 style="color:#e94560;margin:0"><i class="bi bi-grid"></i> Comandero</h6>
+              <div style="color:#888;font-size:.85rem" id="comCount">0 productos</div>
+            </div>
+            <div class="comandero-toolbar" id="catFilters"></div>
+            <div id="comProductos" class="productos-grid">Cargando...</div>
+          </div>
+        </div>
+        <div class="card p-3 carrito-panel">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 style="color:#e94560;margin:0"><i class="bi bi-cart3"></i> Pedido actual</h6>
+            <button class="btn btn-outline-light btn-sm" onclick="clearCart()">Limpiar</button>
+          </div>
+          <div id="carritoList"></div>
+          <div class="carrito-total">
+            <div class="carrito-total-row">
+              <span>Total</span>
+              <span id="carritoTotal">$0.00</span>
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-danger" onclick="confirmarPedido()">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-dashboard">
+      <div class="row g-3 mb-3">
+        <div class="col-md-3"><div class="card p-3"><div class="num" id="dashVentas">$0</div><div class="label">Ventas hoy</div></div></div>
+        <div class="col-md-3"><div class="card p-3"><div class="num" id="dashPedidos">0</div><div class="label">Pedidos hoy</div></div></div>
+        <div class="col-md-3"><div class="card p-3"><div class="num" id="dashProductos">0</div><div class="label">Productos</div></div></div>
+        <div class="col-md-3"><div class="card p-3"><div class="num" id="dashPendientes">0</div><div class="label">Pendientes</div></div></div>
+      </div>
+      <div class="card p-3"><h6 style="color:#e94560"><i class="bi bi-clock-history"></i> Últimos pedidos</h6><div id="dashRecent">Cargando...</div></div>
+    </div>
+
+    <div class="tab-pane" id="tab-productos">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 style="color:#e94560;margin:0"><i class="bi bi-box-seam"></i> Catálogo</h6>
+        <button class="btn btn-primary btn-sm" onclick="openProdModal()">+ Nuevo</button>
+      </div>
+      <div class="card p-3"><div id="prodTable">Cargando...</div></div>
+    </div>
+
+    <div class="tab-pane" id="tab-pedidos">
+      <h6 style="color:#e94560;margin-bottom:.5rem"><i class="bi bi-receipt"></i> Historial</h6>
+      <div class="card p-3"><div id="pedidosTable">Cargando...</div></div>
+    </div>
+
+    <div class="tab-pane" id="tab-reportes">
+      <h6 style="color:#e94560;margin-bottom:.5rem"><i class="bi bi-graph-up"></i> Reporte por fechas</h6>
+      <div class="row g-2 mb-2">
+        <div class="col-auto"><input type="date" id="rDesde" class="form-control form-control-sm" style="width:150px"></div>
+        <div class="col-auto"><input type="date" id="rHasta" class="form-control form-control-sm" style="width:150px"></div>
+        <div class="col-auto"><button class="btn btn-primary btn-sm" onclick="loadReporte()">Ver</button></div>
+      </div>
+      <div class="card p-3"><div id="reporteResult">Selecciona fechas</div></div>
+    </div>
+
+    <div class="tab-pane" id="tab-usuarios">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 style="color:#e94560;margin:0"><i class="bi bi-people"></i> Usuarios</h6>
+        <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Nuevo</button>
+      </div>
+      <div class="card p-3"><div id="usersTable">Cargando...</div></div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="prodModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title" id="prodModalTitle">Nuevo producto</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="pId">
+      <div class="mb-2"><label class="form-label">Nombre</label><input type="text" id="pNombre" class="form-control" placeholder="Hot dog"></div>
+      <div class="mb-2"><label class="form-label">Categoría</label>
+        <select id="pCategoria" class="form-select">
+          <option>Hot dogs</option><option>Hot dogs especiales</option><option>Hamburguesas</option>
+          <option>Alitas</option><option>Aperitivos</option><option>Extras</option>
+        </select>
+      </div>
+      <div class="mb-2"><label class="form-label">Precio $</label><input type="number" id="pPrecio" step="0.5" class="form-control" placeholder="0"></div>
+      <div class="mb-2"><label class="form-label">Descripción</label><textarea id="pDescripcion" class="form-control" rows="2"></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+      <button class="btn btn-danger btn-sm" onclick="saveProducto()">Guardar</button>
+    </div>
+  </div></div></div>
+
+  <div class="modal fade" id="userModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Nuevo usuario</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <div class="mb-2"><label class="form-label">Nombre</label><input type="text" id="uNombre" class="form-control" placeholder="admin_cony"></div>
+      <div class="mb-2"><label class="form-label">Contraseña</label><input type="text" id="uPassword" class="form-control" placeholder="Mínimo 4"></div>
+      <div class="mb-2"><label class="form-label">Rol</label>
+        <select id="uRol" class="form-select">
+          <option value="user">👤 Empleado</option>
+          <option value="admin">👑 Admin</option>
+        </select>
+      </div>
+      <div class="mb-2"><label class="form-label">Nombre real</label><input type="text" id="uNombreReal" class="form-control" placeholder="Nombre(s)"></div>
+      <div class="mb-2"><label class="form-label">Apellidos</label><input type="text" id="uApellidos" class="form-control" placeholder="Apellidos"></div>
+      <div class="mb-2"><label class="form-label">Teléfono</label><input type="text" id="uTelefono" class="form-control" placeholder="Número celular"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+      <button class="btn btn-danger btn-sm" onclick="saveUsuario()">Crear</button>
+    </div>
+  </div></div></div>
+
+  <!-- MODAL EDITAR DATOS USUARIO -->
+  <div class="modal fade" id="userDatosModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Datos de <span id="udNombreUser"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="udUserId">
+      <div class="mb-2"><label class="form-label">Nombre real</label><input type="text" id="udNombreReal" class="form-control" placeholder="Nombre(s)"></div>
+      <div class="mb-2"><label class="form-label">Apellidos</label><input type="text" id="udApellidos" class="form-control" placeholder="Apellidos"></div>
+      <div class="mb-2"><label class="form-label">Teléfono</label><input type="text" id="udTelefono" class="form-control" placeholder="Número celular"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+      <button class="btn btn-danger btn-sm" onclick="saveUsuarioDatos()">Guardar</button>
+    </div>
+  </div></div></div>
+
+  <!-- MODAL SELECCIÓN MÉTODO DE PAGO -->
+  <div class="modal fade" id="pagoModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-sm"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">💳 Método de pago</h5></div>
+    <div class="modal-body">
+      <div class="d-grid gap-2">
+        <button class="btn btn-outline-light btn-lg pago-opcion" data-value="Efectivo" onclick="seleccionarPago('Efectivo')">💵 Efectivo</button>
+        <button class="btn btn-outline-light btn-lg pago-opcion" data-value="Tarjeta" onclick="seleccionarPago('Tarjeta')">💳 Tarjeta débito/crédito</button>
+        <button class="btn btn-outline-light btn-lg pago-opcion" data-value="Transferencia" onclick="seleccionarPago('Transferencia')">🏦 Transferencia</button>
+        <button class="btn btn-outline-light btn-lg pago-opcion" data-value="Tarjeta Servicio" onclick="seleccionarPago('Tarjeta Servicio')">🆔 Tarjeta Servicio</button>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- MODAL CONFIRMACIÓN DEL PEDIDO -->
+  <div class="modal fade" id="confirmarModal" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">📋 Confirmar pedido</h5></div>
+    <div class="modal-body" id="confirmarBody">
+      Cargando...
+    </div>
+    <div class="modal-footer d-flex justify-content-between">
+      <button class="btn btn-secondary" data-bs-dismiss="modal" onclick="cancelarConfirmacion()">🔙 Corregir</button>
+      <button class="btn btn-danger" onclick="ejecutarPedido()">✅ Sí, generar folio</button>
+    </div>
+  </div></div></div>
+
+  <!-- MODAL PERSONALIZACIÓN DE PRODUCTO -->
+  <div class="modal fade" id="modalPersonalizar" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" style="color:#e94560" id="personalizarTitle">Personalizar</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1)"></button>
+        </div>
+        <div class="modal-body" id="personalizarBody">
+          <div id="personalizarLoading" style="text-align:center;padding:2rem;color:#888">Cargando...</div>
+          <div id="personalizarContent" style="display:none">
+            <!-- Ingredientes (con/sin) -->
+            <div id="personalizarIngredientes" style="margin-bottom:1rem">
+              <h6 style="color:#e94560;font-size:.9rem"><i class="bi bi-egg-fried"></i> Ingredientes</h6>
+              <div style="color:#888;font-size:.8rem;margin-bottom:.5rem">Todos vienen incluidos. Selecciona los que NO lleva:</div>
+              <div id="personalizarIngredientesList" class="d-flex flex-wrap gap-2"></div>
+            </div>
+            <!-- Salsas (para alitas/boneless) -->
+            <div id="personalizarSalsas" style="margin-bottom:1rem;display:none">
+              <h6 style="color:#e94560;font-size:.9rem"><i class="bi bi-droplet"></i> Salsa</h6>
+              <div id="personalizarSalsasList" class="d-flex flex-wrap gap-2"></div>
+            </div>
+            <!-- Extras opcionales -->
+            <div id="personalizarExtras" style="margin-bottom:1rem;display:none">
+              <h6 style="color:#e94560;font-size:.9rem"><i class="bi bi-plus-circle"></i> Extras opcionales</h6>
+              <div id="personalizarExtrasList" class="d-flex flex-wrap gap-2"></div>
+            </div>
+            <!-- Observaciones -->
+            <div>
+              <h6 style="color:#e94560;font-size:.9rem"><i class="bi bi-chat-dots"></i> Observaciones</h6>
+              <input type="text" id="personalizarObs" class="form-control" placeholder="Ej: Sin cebolla, salsa extra..." style="max-width:100%">
+            </div>
+            <input type="hidden" id="personalizarProductoId" value="">
+            <input type="hidden" id="personalizarSalsaId" value="">
+          </div>
+        </div>
+        <div class="modal-footer" style="border:none">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-danger" onclick="confirmarPersonalizar()">✅ Agregar al carrito</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>CONY POS &copy; 2026</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const A = sessionStorage.getItem('auth');
+    const U = sessionStorage.getItem('user');
+    let comanderoProductos = [];
+    let comanderoCategoria = 'all';
+    let carrito = [];
+    const categoriasComandero = [
+      { key: 'all', label: '✨ Todos' },
+      { key: 'Hot dogs', label: '🌭 Hot dogs' },
+      { key: 'Especiales', label: '⭐ Especiales' },
+      { key: 'Hamburguesas', label: '🍔 Hamburguesas' },
+      { key: 'Alitas', label: '🍗 Alitas' },
+      { key: 'Aperitivos', label: '🥟 Aperitivos' },
+      { key: 'Extras', label: '➕ Extras' }
+    ];
+
+    function logout(){ sessionStorage.clear(); window.location.href='/'; }
+
+    function api(p,o={}) {
+      o.headers = o.headers || {};
+      o.headers['Authorization'] = 'Basic ' + A;
+      return fetch(p,o).then(r => {
+        if(r.status === 401){ logout(); throw new Error('401'); }
+        if(!r.ok) return r.json().then(e => { throw new Error(e.detail || 'Err'); }).catch(() => { throw new Error('Err'); });
+        return r.json();
+      });
+    }
+
+    function showTab(name,btn){
+      document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active','show'));
+      document.querySelectorAll('.nav-link').forEach(b=>b.classList.remove('active'));
+      document.getElementById('tab-'+name).classList.add('active','show');
+      if(btn) btn.classList.add('active');
+      if(name==='dashboard') loadDashboard();
+      if(name==='productos') loadProductos();
+      if(name==='pedidos') loadPedidos();
+      if(name==='reportes'){}
+      if(name==='usuarios') loadUsuarios();
+      if(name==='comandero') loadComandero();
+      if(name==='corte') verificarCorte();
+    }
+
+    function formatMoney(n){ return '$' + Number(n || 0).toFixed(2); }
+    
+    function actualizarReloj(){
+      const ahora = new Date();
+      const dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const dia = dias[ahora.getDay()];
+      const mes = meses[ahora.getMonth()];
+      const fechaStr = `${dia} ${ahora.getDate()} ${mes} ${ahora.getFullYear()}`;
+      const hora = ahora.getHours().toString().padStart(2,'0');
+      const min = ahora.getMinutes().toString().padStart(2,'0');
+      document.getElementById('relojNav').textContent = `${fechaStr} · ${hora}:${min}`;
+    }
+    // Actualizar cada 30s
+    setInterval(actualizarReloj, 30000);
+    actualizarReloj();
+    
+    function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+    function loadDashboard(){
+      api('/api/reportes/ventas-hoy').then(d => {
+        document.getElementById('dashVentas').textContent = '$' + d.total_ventas.toFixed(2);
+        document.getElementById('dashPedidos').textContent = d.total_pedidos;
+      });
+      api('/api/productos').then(p => document.getElementById('dashProductos').textContent = p.filter(x=>x.disponible).length);
+      api('/api/pedidos').then(p => {
+        document.getElementById('dashPendientes').textContent = p.filter(x=>x.estatus==='pendiente').length;
+        let r = p.slice(0,5);
+        if(!r.length){ document.getElementById('dashRecent').innerHTML = '<div class="text-muted">Sin pedidos</div>'; return; }
+        let h = '<table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead><tbody>';
+        r.forEach(x => {
+          let badge = x.estatus==='pendiente' ? 'badge-pendiente' : x.estatus==='completado' ? 'badge-completado' : x.estatus==='en-preparacion' ? 'badge-preparacion' : x.estatus==='cancelado' ? 'badge-cancelado' : x.estatus==='pendiente-autorizacion' ? 'badge-warning' : 'badge-pendiente';
+          h += `<tr><td>${x.folio||'-'}</td><td>${x.cliente_nombre||'Mostrador'}</td><td>$${(x.total||0).toFixed(2)}</td><td><span class="badge ${badge}">${x.estatus||'pendiente'}</span></td></tr>`;
+        });
+        h += '</tbody></table>';
+        document.getElementById('dashRecent').innerHTML = h;
+      });
+    }
+
+    function loadProductos(){
+      api('/api/productos').then(p => {
+        if(!p.length){ document.getElementById('prodTable').innerHTML = '<div class="text-muted">Sin productos</div>'; return; }
+        let h = '<table class="table table-hover"><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>$</th><th>Disp.</th><th></th></tr></thead><tbody>';
+        p.forEach(x => {
+          h += `<tr><td>${x.id}</td><td>${x.nombre}</td><td>${x.categoria}</td><td>${x.precio.toFixed(2)}</td><td>${x.disponible?'Sí':'No'}</td><td>`+
+               `<button class="btn btn-primary btn-sm" onclick="editProd(${x.id},'${(x.nombre||'').replace(/'/g,"\\'")}','${(x.categoria||'').replace(/'/g,"\\'")}',${x.precio},'${(x.descripcion||'').replace(/'/g,"\\'")}')"><i class="bi bi-pencil"></i></button> `+
+               `<button class="btn btn-danger btn-sm" onclick="if(confirm('Eliminar?')) delProd(${x.id})"><i class="bi bi-trash"></i></button>`+
+               `</td></tr>`;
+        });
+        h += '</tbody></table>';
+        document.getElementById('prodTable').innerHTML = h;
+      });
+    }
+
+    function openProdModal(){
+      document.getElementById('prodModalTitle').textContent = 'Nuevo producto';
+      document.getElementById('pId').value='';
+      document.getElementById('pNombre').value='';
+      document.getElementById('pPrecio').value='';
+      document.getElementById('pDescripcion').value='';
+      new bootstrap.Modal(document.getElementById('prodModal')).show();
+    }
+
+    function editProd(id,n,c,p,d){
+      document.getElementById('prodModalTitle').textContent = 'Editar producto';
+      document.getElementById('pId').value=id;
+      document.getElementById('pNombre').value=n;
+      document.getElementById('pCategoria').value=c;
+      document.getElementById('pPrecio').value=p;
+      document.getElementById('pDescripcion').value=d;
+      new bootstrap.Modal(document.getElementById('prodModal')).show();
+    }
+
+    function saveProducto(){
+      const id = document.getElementById('pId').value;
+      const data = {
+        nombre: document.getElementById('pNombre').value,
+        categoria: document.getElementById('pCategoria').value,
+        precio: parseFloat(document.getElementById('pPrecio').value||0),
+        descripcion: document.getElementById('pDescripcion').value,
+        disponible: 1
+      };
+      if(!data.nombre || !data.precio){ alert('Completa nombre y precio'); return; }
+      const m = id ? 'PUT' : 'POST';
+      const url = id ? `/api/productos/${id}` : '/api/productos';
+      api(url,{method:m,body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(()=>{ bootstrap.Modal.getInstance(document.getElementById('prodModal')).hide(); loadProductos(); loadComandero(); });
+    }
+
+    function delProd(id){ api(`/api/productos/${id}`,{method:'DELETE'}).then(()=>{ loadProductos(); loadComandero(); }); }
+
+    function loadPedidos(){
+      api('/api/pedidos').then(p => {
+        if(!p.length){ document.getElementById('pedidosTable').innerHTML = '<div class="text-muted">Sin pedidos</div>'; return; }
+        let h = '<table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Tel</th><th>Total</th><th>Estado</th><th>Pago</th><th>Fecha</th><th></th></tr></thead><tbody>';
+        p.forEach(x => {
+          let badge = x.estatus==='pendiente' ? 'badge-pendiente' : x.estatus==='completado' ? 'badge-completado' : x.estatus==='en-preparacion' ? 'badge-preparacion' : x.estatus==='cancelado' ? 'badge-cancelado' : x.estatus==='pendiente-autorizacion' ? 'badge-warning' : 'badge-pendiente';
+          h += `<tr><td>${x.folio||'-'}</td><td>${x.cliente_nombre||'-'}</td><td>${x.telefono||'-'}</td><td>$${(x.total||0).toFixed(2)}</td>`+
+               `<td><span class="badge ${badge}">${x.estatus||'pendiente'}</span></td><td>${x.metodo_pago||'-'}</td><td style="font-size:.75rem">${x.fecha?new Date(x.fecha).toLocaleString():'-'}</td>`+
+               `<td><select class="form-select form-select-sm" style="width:120px" onchange="cambiarEst(${x.id},this.value)">`+
+               `<option value="pendiente" ${x.estatus==='pendiente'?'selected':''}>Pendiente</option>`+
+               `<option value="en-preparacion" ${x.estatus==='en-preparacion'?'selected':''}>Cocina</option>`+
+               `<option value="completado" ${x.estatus==='completado'?'selected':''}>Listo</option>`+
+               `<option value="cancelado" ${x.estatus==='cancelado'?'selected':''}>Cancelar</option>
+               <option value="pendiente-autorizacion" ${x.estatus==='pendiente-autorizacion'?'selected':''}>⏳ Pendiente Autorizar</option>`+
+               `</select></td></tr>`;
+        });
+        h += '</tbody></table>';
+        document.getElementById('pedidosTable').innerHTML = h;
+      });
+    }
+
+    function cambiarEst(id,e){ api(`/api/pedidos/${id}/estatus`,{method:'PUT',body:JSON.stringify({estatus:e}),headers:{'Content-Type':'application/json'}}).then(loadPedidos); }
+
+    function loadReporte(){
+      const d = document.getElementById('rDesde').value, h = document.getElementById('rHasta').value;
+      if(!d || !h){ alert('Selecciona fechas'); return; }
+      api(`/api/reportes/ventas-rango?desde=${d}&hasta=${h}`).then(data => {
+        if(!data.length){ document.getElementById('reporteResult').innerHTML = '<div class="text-muted">Sin datos</div>'; return; }
+        let htm = '<table class="table table-hover"><thead><tr><th>Día</th><th>Pedidos</th><th>Total</th></tr></thead><tbody>';
+        data.forEach(r => htm += `<tr><td>${r.dia}</td><td>${r.pedidos}</td><td>$${r.total.toFixed(2)}</td></tr>`);
+        htm += `<tr style="background:#0f3460;font-weight:bold"><td>TOTAL</td><td>${data.reduce((s,r)=>s+r.pedidos,0)}</td><td>$${data.reduce((s,r)=>s+r.total,0).toFixed(2)}</td></tr></tbody></table>`;
+        document.getElementById('reporteResult').innerHTML = htm;
+      });
+    }
+
+    function loadUsuarios(){
+      api('/api/usuarios').then(u => {
+        document.getElementById('usersTabLi').style.display='list-item';
+        let h = '<table class="table table-hover"><thead><tr><th>ID</th><th>Usuario</th><th>Nombre real</th><th>Teléfono</th><th>Rol</th><th>Activo</th><th></th></tr></thead><tbody>';
+        u.forEach(x => h += `<tr><td>${x.id}</td><td><strong>${esc(x.nombre)}</strong></td><td>${esc(x.nombre_real||'')} ${esc(x.apellidos||'')}</td><td>${x.telefono||'-'}</td><td>${x.rol}</td><td>${x.activo?'✅':'❌'}</td><td><button class="btn btn-primary btn-sm" onclick="editarUsuarioDatos(${x.id},'${esc(x.nombre)}','${esc(x.nombre_real||'')}','${esc(x.apellidos||'')}','${esc(x.telefono||'')}')">✏️</button></td></tr>`);
+        h += '</tbody></table>';
+        document.getElementById('usersTable').innerHTML = h;
+      }).catch(()=>document.getElementById('usersTabLi').style.display='none');
+    }
+
+    function openUserModal(){ new bootstrap.Modal(document.getElementById('userModal')).show(); }
+
+    function editarUsuarioDatos(id, nombreUser, nombreReal, apellidos, telefono){
+      document.getElementById('udUserId').value = id;
+      document.getElementById('udNombreUser').textContent = nombreUser;
+      document.getElementById('udNombreReal').value = nombreReal || '';
+      document.getElementById('udApellidos').value = apellidos || '';
+      document.getElementById('udTelefono').value = telefono || '';
+      new bootstrap.Modal(document.getElementById('userDatosModal')).show();
+    }
+    
+    function saveUsuarioDatos(){
+      const id = document.getElementById('udUserId').value;
+      const data = {
+        nombre_real: document.getElementById('udNombreReal').value.trim(),
+        apellidos: document.getElementById('udApellidos').value.trim(),
+        telefono: document.getElementById('udTelefono').value.trim()
+      };
+      api('/api/usuarios/'+id+'/datos',{method:'PUT',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(()=>{
+        bootstrap.Modal.getInstance(document.getElementById('userDatosModal')).hide();
+        loadUsuarios();
+      });
+    }
+    
+    function saveUsuario(){
+      const data = {
+        nombre: document.getElementById('uNombre').value,
+        password: document.getElementById('uPassword').value,
+        rol: document.getElementById('uRol').value,
+        nombre_real: document.getElementById('uNombreReal').value.trim(),
+        apellidos: document.getElementById('uApellidos').value.trim(),
+        telefono: document.getElementById('uTelefono').value.trim()
+      };
+      if(!data.nombre || !data.password){ alert('Completa datos'); return; }
+      api('/api/usuarios',{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(()=>{ bootstrap.Modal.getInstance(document.getElementById('userModal')).hide(); loadUsuarios(); });
+    }
+
+    function loadComandero(){
+      api('/api/productos').then(p => {
+        comanderoProductos = p.filter(x => x.disponible);
+        renderCategoriasComandero();
+        renderProductosComandero();
+      });
+    }
+
+    function renderCategoriasComandero(){
+      const el = document.getElementById('catFilters');
+      el.innerHTML = categoriasComandero.map(c => `<button class="cat-btn ${comanderoCategoria===c.key?'active':''}" onclick="setCategoria('${c.key.replace(/'/g,"\\'")}')">${c.label}</button>`).join('');
+    }
+
+    function setCategoria(cat){ comanderoCategoria = cat; renderCategoriasComandero(); renderProductosComandero(); }
+
+    function renderProductosComandero(){
+      const list = comanderoProductos.filter(x => comanderoCategoria==='all' || x.categoria===comanderoCategoria);
+      document.getElementById('comCount').textContent = `${list.length} productos`;
+      if(!list.length){ document.getElementById('comProductos').innerHTML = '<div class="placeholder-empty" style="grid-column:1/-1">No hay productos en esta categoría</div>'; return; }
+      document.getElementById('comProductos').innerHTML = list.map(x => `
+        <button class="producto-btn" onclick="agregarCarrito(${x.id})">
+          <div class="producto-emoji">${esc(x.emoji || emojiPorCategoria(x.categoria))}</div>
+          <div class="producto-nombre">${esc(x.nombre)}</div>
+          <div class="producto-precio">${formatMoney(x.precio)}</div>
+        </button>
+      `).join('');
+    }
+
+    function emojiPorCategoria(cat){
+      if(cat==='Hot dogs') return '🌭';
+      if(cat==='Especiales') return '⭐';
+      if(cat==='Hamburguesas') return '🍔';
+      if(cat==='Alitas') return '🍗';
+      if(cat==='Aperitivos') return '🥟';
+      if(cat==='Extras') return '➕';
+      return '🍽️';
+    }
+
+    function agregarCarrito(id){
+      const p = comanderoProductos.find(x => x.id === id);
+      if(!p) return;
+      // Detectar si tiene complementos o salsas → abrir modal
+      Promise.all([
+        fetch('/api/productos/'+id+'/complementos').then(r=>r.json()),
+        fetch('/api/productos/'+id+'/salsas').then(r=>r.json())
+      ]).then(([comps, salsas]) => {
+        // Limpiar el modal y prepararlo
+        const hasComps = comps && comps.length > 0;
+        const hasSalsas = salsas && salsas.length > 0;
+        
+        if(!hasComps && !hasSalsas){
+          // Sin personalización → agregar directo como antes
+          const found = carrito.find(x => x.id === id);
+          if(found) found.q += 1;
+          else carrito.push({ id:p.id, n:p.nombre, p:Number(p.precio), q:1 });
+          renderCarrito();
+          return;
+        }
+        
+        document.getElementById('personalizarProductoId').value = id;
+        document.getElementById('personalizarTitle').textContent = 'Personalizar: ' + p.nombre;
+        
+        // Cargar ingredientes (con/sin)
+        const ingDiv = document.getElementById('personalizarIngredientes');
+        const ingList = document.getElementById('personalizarIngredientesList');
+        const salsaDiv = document.getElementById('personalizarSalsas');
+        const salsaList = document.getElementById('personalizarSalsasList');
+        const extraDiv = document.getElementById('personalizarExtras');
+        const extraList = document.getElementById('personalizarExtrasList');
+        const obs = document.getElementById('personalizarObs');
+        
+        obs.value = '';
+        
+        if(hasComps){
+          const obligatorios = comps.filter(c => c.obligatorio === 1);
+          const opcionales = comps.filter(c => c.obligatorio === 0);
+          
+          if(obligatorios.length){
+            ingDiv.style.display = 'block';
+            ingList.innerHTML = obligatorios.map(c => `
+              <label class="btn btn-outline-light btn-sm ingrediente-btn" style="border-radius:50px;cursor:pointer" data-id="${c.id}" data-nombre="${esc(c.nombre)}">
+                <input type="checkbox" checked hidden>
+                ${esc(c.nombre)}
+              </label>
+            `).join('');
+            // Click toggle: quitar/meter ingrediente
+            ingList.querySelectorAll('.ingrediente-btn').forEach(btn => {
+              btn.addEventListener('click', function(){
+                this.classList.toggle('active');
+                this.classList.toggle('btn-outline-light');
+                this.classList.toggle('btn-outline-danger');
+              });
+            });
+          } else {
+            ingDiv.style.display = 'none';
+          }
+          
+          if(opcionales.length){
+            extraDiv.style.display = 'block';
+            extraList.innerHTML = opcionales.map(c => `
+              <label class="btn btn-outline-light btn-sm extra-btn" style="border-radius:50px;cursor:pointer" data-id="${c.id}" data-nombre="${esc(c.nombre)}">
+                <input type="checkbox" hidden>
+                ${esc(c.nombre)}
+              </label>
+            `).join('');
+            extraList.querySelectorAll('.extra-btn').forEach(btn => {
+              btn.addEventListener('click', function(){
+                this.classList.toggle('active');
+                this.classList.toggle('btn-outline-light');
+                this.classList.toggle('btn-danger');
+              });
+            });
+          } else {
+            extraDiv.style.display = 'none';
+          }
+        } else {
+          ingDiv.style.display = 'none';
+          extraDiv.style.display = 'none';
+        }
+        
+        if(hasSalsas){
+          salsaDiv.style.display = 'block';
+          salsaList.innerHTML = salsas.map((s, i) => `
+            <label class="btn btn-outline-light btn-sm salsa-btn ${i===0?'active btn-danger':'btn-outline-light'}" style="border-radius:50px;cursor:pointer" data-id="${s.id}" data-nombre="${esc(s.nombre)}">
+              <input type="radio" name="salsaSel" value="${s.id}" ${i===0?'checked':''} hidden>
+              ${s.picor_label || ''} ${esc(s.nombre)}
+            </label>
+          `).join('');
+          document.getElementById('personalizarSalsaId').value = salsas[0].id;
+          salsaList.querySelectorAll('.salsa-btn').forEach(btn => {
+            btn.addEventListener('click', function(){
+              salsaList.querySelectorAll('.salsa-btn').forEach(b => {
+                b.classList.remove('active','btn-danger');
+                b.classList.add('btn-outline-light');
+              });
+              this.classList.add('active','btn-danger');
+              this.classList.remove('btn-outline-light');
+              document.getElementById('personalizarSalsaId').value = this.dataset.id;
+            });
+          });
+        } else {
+          salsaDiv.style.display = 'none';
+        }
+        
+        document.getElementById('personalizarContent').style.display = 'block';
+        document.getElementById('personalizarLoading').style.display = 'none';
+        new bootstrap.Modal(document.getElementById('modalPersonalizar')).show();
+      });
+    }
+    
+    function confirmarPersonalizar(){
+      const id = parseInt(document.getElementById('personalizarProductoId').value);
+      const p = comanderoProductos.find(x => x.id === id);
+      if(!p) return;
+      
+      // Obtener ingredientes DESACTIVADOS (los que NO lleva)
+      const sinList = [];
+      document.querySelectorAll('#personalizarIngredientesList .ingrediente-btn').forEach(btn => {
+        if(!btn.classList.contains('active')){
+          sinList.push(btn.dataset.nombre);
+        }
+      });
+      
+      // Obtener extras seleccionados
+      const extraList = [];
+      document.querySelectorAll('#personalizarExtrasList .extra-btn').forEach(btn => {
+        if(btn.classList.contains('active')){
+          extraList.push(btn.dataset.nombre);
+        }
+      });
+      
+      // Obtener salsa seleccionada
+      const salsaId = document.getElementById('personalizarSalsaId').value;
+      const salsaNombre = document.querySelector('.salsa-btn.active')?.dataset?.nombre || '';
+      
+      // Obtener observaciones
+      const obs = document.getElementById('personalizarObs').value.trim();
+      
+      // Construir nota para la comanda
+      let nota = '';
+      if(sinList.length) nota += 'Sin: ' + sinList.join(', ');
+      if(extraList.length) nota += (nota?' | ':'') + 'Extra: ' + extraList.join(', ');
+      if(salsaNombre) nota += (nota?' | ':'') + 'Salsa: ' + salsaNombre;
+      if(obs) nota += (nota?' | ':'') + obs;
+      
+      const found = carrito.find(x => x.id === id);
+      if(found) {
+        found.q += 1;
+        // Si ya tiene nota diferente, agregar nuevo item separado
+        if(found.nota && found.nota !== nota){
+          carrito.push({ id:p.id, n:p.nombre, p:Number(p.precio), q:1, nota: nota });
+        } else {
+          found.nota = nota;
+        }
+      } else {
+        carrito.push({ id:p.id, n:p.nombre, p:Number(p.precio), q:1, nota: nota });
+      }
+      
+      bootstrap.Modal.getInstance(document.getElementById('modalPersonalizar')).hide();
+      renderCarrito();
+    }
+
+    function cambiarCantidad(id,delta){
+      const it = carrito.find(x => x.id === id);
+      if(!it) return;
+      it.q += delta;
+      if(it.q <= 0) carrito = carrito.filter(x => x.id !== id);
+      renderCarrito();
+    }
+
+    function quitarItem(id){ carrito = carrito.filter(x => x.id !== id); renderCarrito(); }
+    function clearCart(){ carrito = []; renderCarrito(); }
+    function totalCarrito(){ return carrito.reduce((s,x)=>s + x.p * x.q, 0); }
+
+    function renderCarrito(){
+      const el = document.getElementById('carritoList');
+      if(!carrito.length) el.innerHTML = '<div class="placeholder-empty">Todavía no agregas productos</div>';
+      else el.innerHTML = carrito.map(x => `
+        <div class="carrito-item">
+          <div class="carrito-top">
+            <div>
+              <div class="carrito-nombre">${esc(x.n)}</div>
+              <div class="carrito-sub">${formatMoney(x.p)} c/u · ${formatMoney(x.p * x.q)}</div>
+              ${x.nota ? `<div style="font-size:.75rem;color:#e94560;margin-top:.2rem">📝 ${esc(x.nota)}</div>` : ''}
+            </div>
+            <button class="btn btn-outline-danger btn-sm" onclick="quitarItem(${x.id})">✕</button>
+          </div>
+          <div class="qty-wrap">
+            <button class="qty-btn" onclick="cambiarCantidad(${x.id},-1)">−</button>
+            <div class="qty-num">${x.q}</div>
+            <button class="qty-btn" onclick="cambiarCantidad(${x.id},1)">+</button>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('carritoTotal').textContent = formatMoney(totalCarrito());
+    }
+
+    // Variables para flujo de confirmación de pedido
+    let pedidoPendiente = null;  // { telefono, nombre, direccion, metodo_pago, total, nota, productos_str }
+    
+    async function confirmarPedido(){
+      try {
+        if(!carrito || !carrito.length){ alert('Agrega productos al pedido'); return; }
+        const auth = A;
+        if(!auth){ alert('No hay sesión activa'); return; }
+        
+        // Verificar corte abierto primero
+        if(!corteAbierto){
+          alert('⚠️ No hay corte de caja abierto. Debes abrir caja antes de generar pedidos.');
+          abrirCorte();
+          return;
+        }
+        
+        // 1. Pedir teléfono primero
+        const telefono = prompt('Teléfono del cliente (10 dígitos):','');
+        if(telefono===null) return;
+        const tel = telefono.replace(/\D/g,'');
+        if(tel.length < 10){ alert('Teléfono inválido'); return; }
+        
+        let nombre = 'Mostrador';
+        let direccion = 'Mostrador';
+        
+        // 2. Buscar si el cliente ya existe
+        try {
+          const resCl = await fetch('/api/clientes/'+encodeURIComponent(tel), {
+            headers:{ 'Authorization':'Basic '+auth }
+          });
+          if(resCl.ok){
+            const cl = await resCl.json();
+            if(cl && cl.nombre){
+              nombre = cl.nombre;
+              direccion = cl.direccion || 'Mostrador';
+              alert('👋 Bienvenido '+nombre);
+            }
+          }
+        } catch(e){ /* ignorar error de busqueda */ }
+        
+        // 3. Si no se encontró cliente, pedir datos
+        if(nombre === 'Mostrador'){
+          const n = prompt('Nombre del cliente:','');
+          if(n===null) return;
+          nombre = n.trim() || 'Mostrador';
+          const d = prompt('Dirección o referencia:','');
+          if(d===null) return;
+          direccion = d.trim() || 'Mostrador';
+        }
+        
+        // 4. Guardar datos pendientes y abrir modal de método de pago
+        const total = Number(totalCarrito().toFixed(2));
+        const nota = carrito.map(x => `${x.q}x ${x.n}${x.nota ? ' ['+x.nota+']' : ''}`).join(', ');
+        const productos_str = JSON.stringify(carrito.map(x => ({ id:x.id, n:x.n, p:x.p, q:x.q, nota: x.nota||'' })));
+        
+        pedidoPendiente = { telefono: tel, nombre, direccion, total, nota, productos_str };
+        new bootstrap.Modal(document.getElementById('pagoModal')).show();
+      } catch(e){
+        alert('Error: '+(e.message||e));
+      }
+    }
+    
+    function seleccionarPago(metodo){
+      pedidoPendiente.metodo_pago = metodo;
+      bootstrap.Modal.getInstance(document.getElementById('pagoModal')).hide();
+      mostrarConfirmacion();
+    }
+    
+    function mostrarConfirmacion(){
+      if(!pedidoPendiente) return;
+      const p = pedidoPendiente;
+      const prods = carrito.map(x => `${x.q}x ${x.n} — ${formatMoney(x.p * x.q)}`).join('<br>');
+      document.getElementById('confirmarBody').innerHTML = `
+        <div style="background:#1a1a2e;padding:.75rem;border-radius:8px;margin-bottom:.75rem">
+          <div style="color:#888;font-size:.8rem">CLIENTE</div>
+          <div style="font-weight:700;font-size:1.05rem">${esc(p.nombre)}</div>
+          <div style="color:#999;font-size:.85rem">📞 ${p.telefono}</div>
+          ${p.direccion !== 'Mostrador' ? `<div style="color:#999;font-size:.85rem">📍 ${esc(p.direccion)}</div>` : ''}
+        </div>
+        <div style="background:#1a1a2e;padding:.75rem;border-radius:8px;margin-bottom:.75rem">
+          <div style="color:#888;font-size:.8rem">PRODUCTOS</div>
+          <div>${prods}</div>
+        </div>
+        <div style="background:#1a1a2e;padding:.75rem;border-radius:8px;margin-bottom:.75rem">
+          <div style="color:#888;font-size:.8rem">MÉTODO DE PAGO</div>
+          <div style="font-weight:700;font-size:1.1rem">${esc(p.metodo_pago)}</div>
+        </div>
+        <div style="background:#0f3460;padding:.75rem;border-radius:8px">
+          <div class="d-flex justify-content-between" style="font-weight:800;font-size:1.3rem">
+            <span>TOTAL</span>
+            <span style="color:#e94560">${formatMoney(p.total)}</span>
+          </div>
+        </div>
+      `;
+      new bootstrap.Modal(document.getElementById('confirmarModal')).show();
+    }
+    
+    function cancelarConfirmacion(){
+      pedidoPendiente = null;
+    }
+    
+    async function ejecutarPedido(){
+      const p = pedidoPendiente;
+      if(!p) return;
+      try {
+        const r = await fetch('/api/comandar_directo', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'Authorization':'Basic '+A },
+          body: JSON.stringify({
+            telefono: p.telefono,
+            nombre: p.nombre,
+            metodo_pago: p.metodo_pago,
+            nota: p.nota,
+            total: p.total,
+            productos: p.productos_str
+          })
+        });
+        const txt = await r.text();
+        let data;
+        try{ data = JSON.parse(txt); }catch(e2){ data = null; }
+        if(!r.ok) throw new Error((data&&(data.detail||data.error||data.message))||txt||'HTTP '+r.status);
+        const folio = (data&&(data.folio||data.data?.folio))||'sin folio';
+        bootstrap.Modal.getInstance(document.getElementById('confirmarModal')).hide();
+        alert('✅ Pedido registrado · Folio: '+folio);
+        carrito = [];
+        pedidoPendiente = null;
+        renderCarrito();
+        loadDashboard();
+      } catch(e){
+        alert('Error: '+(e.message||e));
+      }
+    }
+
+    // ==================== CORTE DE CAJA ====================
+    let corteAbierto = null;
+    
+    async function verificarCorte(){
+      try {
+        const d = await api('/api/corte/estado');
+        if(d.estado === 'ninguno'){
+          document.getElementById('btnAbrirCorteNav').style.display='inline-block';
+          document.getElementById('btnCerrarCorteNav').style.display='none';
+          // Mostrar modal automático
+          mostrarModalApertura();
+          return;
+        }
+        corteAbierto = d;
+        document.getElementById('btnAbrirCorteNav').style.display='none';
+        document.getElementById('btnCerrarCorteNav').style.display='inline-block';
+      } catch(e){
+        console.error('Error al verificar corte');
+      }
+    }
+    
+    function setFondoRapido(val){
+      document.getElementById('inputFondoApertura').value = val;
+    }
+
+    function mostrarModalApertura(){
+      const user = window.navNombreReal || sessionStorage.getItem('user') || 'Usuario';
+      document.getElementById('userNameApertura').textContent = user;
+      document.getElementById('inputFondoApertura').value = 500;
+      document.getElementById('errorFondoApertura').style.display = 'none';
+      const el = document.getElementById('modalAbrirCorte');
+      const modal = new bootstrap.Modal(el, {backdrop:'static', keyboard:false});
+      modal.show();
+      // Forzar que no se pueda cerrar con escape ni backdrop
+      el.addEventListener('keydown', function(e){ if(e.key === 'Escape') e.stopPropagation(); });
+    }
+
+    async function ejecutarApertura(){
+      const inp = document.getElementById('inputFondoApertura');
+      const val = parseFloat(inp.value);
+      if(isNaN(val) || val < 0){
+        document.getElementById('errorFondoApertura').textContent = 'Monto inválido';
+        document.getElementById('errorFondoApertura').style.display = 'block';
+        return;
+      }
+      document.getElementById('errorFondoApertura').style.display = 'none';
+      try {
+        const r = await api('/api/corte/abrir', {
+          method:'POST',
+          body:JSON.stringify({fondo_inicial:val}),
+          headers:{'Content-Type':'application/json'}
+        });
+        bootstrap.Modal.getInstance(document.getElementById('modalAbrirCorte')).hide();
+        // Mensaje de confirmación bonito
+        alert('✅ ¡Listo! Ya tengo abierto tu corte de caja.\n\nFondo: $'+val.toFixed(2)+'\n¡Que tengas excelente turno!');
+        await verificarCorte();
+      } catch(e){
+        document.getElementById('errorFondoApertura').textContent = e.message || 'Error al abrir corte';
+        document.getElementById('errorFondoApertura').style.display = 'block';
+      }
+    }
+
+    async function abrirCorte(){
+      mostrarModalApertura();
+    }
+    
+    async function cerrarCorte(){
+      if(!corteAbierto) return;
+      // Verificar que no haya pedidos pendientes
+      try {
+        const pedidos = await api('/api/pedidos');
+        const pendientes = pedidos.filter(p => p.estatus === 'pendiente' || p.estatus === 'en-preparacion' || p.estatus === 'pendiente-autorizacion');
+        if(pendientes.length > 0){
+          const cancelPend = pendientes.filter(p => p.estatus === 'pendiente-autorizacion');
+          let msg = '⚠️ Hay '+pendientes.length+' pedido(s) sin completar:';
+          if(cancelPend.length) msg += '\n- '+cancelPend.length+' cancelación(es) pendiente(s) de autorizar';
+          if(pendientes.length - cancelPend.length > 0) msg += '\n- '+(pendientes.length-cancelPend.length)+' pendiente(s) o en preparación';
+          msg += '\n\nDeben resolverse antes de cerrar el corte.';
+          alert(msg);
+          return;
+        }
+      } catch(e){ /* dejar pasar si falla la verificación */ }
+      if(!confirm('⚠️ ¿Estás seguro de cerrar el corte? No se podrán generar más pedidos hasta abrir uno nuevo.')) return;
+      // Mostrar modal de arqueo de caja (solo denominaciones, sin resumen ni diferencias)
+      document.getElementById('arqueoCorteNum').textContent = corteAbierto.id || '';
+      document.getElementById('arqueoFondoInicial').textContent = '$' + ((corteAbierto.fondo_inicial||0)).toFixed(2);
+      document.getElementById('arqueoFondoDisplay').textContent = '$' + ((corteAbierto.fondo_inicial||0)).toFixed(2);
+      // Resetear campos
+      ['1000','500','200','100','50','20'].forEach(denom => {
+        const el = document.getElementById('arq_'+denom);
+        if(el) el.value = '';
+      });
+      document.getElementById('arqueoMonedas').value = '';
+      document.getElementById('arqueoTotalCalculado').textContent = '$0.00';
+      document.getElementById('arqueoObs').value = '';
+      document.getElementById('errorArqueo').style.display = 'none';
+      new bootstrap.Modal(document.getElementById('modalArqueoCaja')).show();
+    }
+
+    function calcularArqueo(){
+      const billetes = [
+        {denom:1000, id:'arq_1000', label:'$1,000'},
+        {denom:500, id:'arq_500', label:'$500'},
+        {denom:200, id:'arq_200', label:'$200'},
+        {denom:100, id:'arq_100', label:'$100'},
+        {denom:50, id:'arq_50', label:'$50'},
+        {denom:20, id:'arq_20', label:'$20'}
+      ];
+      let total = 0;
+      billetes.forEach(b => {
+        const el = document.getElementById(b.id);
+        const raw = (el.value || '').replace(/[^\d.]/g, ''); // limpiar no-numéricos
+        const v = parseFloat(raw) || 0;
+        const subtotal = b.denom * v;
+        total += subtotal;
+      });
+      // Monedas: un solo campo con el total
+      const monedasEl = document.getElementById('arqueoMonedas');
+      const rawM = (monedasEl.value || '').replace(/[^\d.]/g, '');
+      const monedas = parseFloat(rawM) || 0;
+      total += monedas;
+      document.getElementById('arqueoTotalCalculado').textContent = '$'+total.toFixed(2);
+      document.getElementById('arqueoTotalHidden').value = total.toFixed(2);
+      return total;
+    }
+
+    async function confirmarArqueo(){
+      if(!corteAbierto) return;
+      const totalCaja = calcularArqueo();
+      if(totalCaja <= 0 && !confirm('⚠️ El arqueo da $0. ¿Estás seguro?')) return;
+      
+      document.getElementById('errorArqueo').style.display = 'none';
+      const obs = document.getElementById('arqueoObs').value.trim();
+      
+      // Recalcular justo antes de enviar para asegurar valor fresco
+      const totalFinal = calcularArqueo();
+      
+      try {
+        const r = await api('/api/corte/cerrar', {
+          method:'POST',
+          body:JSON.stringify({
+            total_arqueado: totalFinal,
+            observaciones: obs || ''
+          }),
+          headers:{'Content-Type':'application/json'}
+        });
+        
+        bootstrap.Modal.getInstance(document.getElementById('modalArqueoCaja')).hide();
+        alert('✅ Corte cerrado correctamente. Cerrando sesión...');
+        corteAbierto = null;
+        logout();
+      } catch(e){
+        document.getElementById('errorArqueo').textContent = 'Error: '+(e.message||e);
+        document.getElementById('errorArqueo').style.display = 'block';
+      }
+    }
+
+    function autoCalcularArqueo(){
+      calcularArqueo();
+    }
+    
+    // Obtener rol y datos del usuario
+    fetch('/api/me',{headers:{'Authorization':'Basic '+A}}).then(r=>r.json()).then(me=>{
+      window.userRol = me.rol;
+      const nombreCompleto = (me.nombre_real || '') + ' ' + (me.apellidos || '');
+      document.getElementById('navUser').textContent = (nombreCompleto.trim() || me.nombre).trim();
+      window.navUserName = me.nombre;
+      window.navNombreReal = nombreCompleto.trim() || me.nombre;
+      if(me.rol === 'user'){
+        document.getElementById('reportesTabLi').style.display='none';
+        document.getElementById('usuariosTabLi').style.display='none';
+        document.getElementById('productosTabLi').style.display='none';
+      } else {
+        document.getElementById('btnAdmin').style.display='inline-block';
+      }
+      // Ahora verificar/abrir corte (después de tener el nombre real)
+      verificarCorte();
+    }).catch(()=>{
+      // Si falla, intentar de todas formas
+      verificarCorte();
+    });
+    loadComandero();
+    loadDashboard();
+    loadUsuarios();
+    renderCarrito();
+    
+    function abrirAdmin(){
+      // Abre en nueva ventana sin arrastrar auth Basic del dominio
+      window.open('/admin', '_blank', 'noopener,noreferrer');
+    }
+  </script>
+</body>
+</html>

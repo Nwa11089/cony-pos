@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CONY - Administración</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    body { background: #1a1a2e; color: #eee; font-family: Segoe UI, system-ui, sans-serif; }
+    .navbar { background: #16213e !important; border-bottom: 2px solid #0f3460; }
+    .navbar-brand { font-weight: 800; color: #e94560 !important; }
+    .card { background: #16213e; border: 1px solid #0f3460; border-radius: 12px; color: #eee; }
+    .card .num { font-size: 1.6rem; font-weight: 800; color: #e94560; }
+    .card .label { color: #888; font-size: 0.8rem; }
+    .table { color: #ddd; margin: 0; }
+    .table th { background: #0f3460; color: #e94560; border-color: #1a1a2e; font-size:.85rem; }
+    .table td { border-color: #1a1a3e; vertical-align: middle; }
+    .table-hover tbody tr:hover { background: #1a1a4e; color: #fff; }
+    .btn-sm { font-size: .75rem; }
+    .form-control, .form-select { background: #1a1a2e; border: 1px solid #0f3460; color: #eee; }
+    .form-control:focus { background: #1a1a3e; border-color: #e94560; box-shadow: 0 0 0 2px rgba(233,69,96,.2); color: #eee; }
+    .modal-content { background: #16213e; border: 1px solid #0f3460; color: #eee; border-radius: 12px; }
+    .modal-header { border-bottom: 1px solid #0f3460; }
+    .modal-header .btn-close { filter: invert(1); }
+    .cliente-avatar { width: 40px; height: 40px; border-radius: 50%; background: #0f3460; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #e94560; font-size: 1rem; flex-shrink:0; }
+    .nav-tabs .nav-link { color: #a0a0b0; border: none; }
+    .nav-tabs .nav-link.active { background: transparent; color: #e94560; border-bottom: 2px solid #e94560; }
+    .badge-pendiente { background: #f39c12; color: #000; }
+    .badge-completado { background: #27ae60; color: #fff; }
+    .badge-preparacion { background: #3498db; color: #fff; }
+    .badge-cancelado { background: #e74c3c; color: #fff; }
+    .badge-faltante { background: #e74c3c; color: #fff; }
+    .badge-sobrante { background: #f39c12; color: #000; }
+    .badge-cuadra { background: #27ae60; color: #fff; }
+    .login-box { max-width: 380px; margin: 4rem auto; }
+    .login-box .card { padding: 2rem; }
+    .login-box h3 { color: #e94560; text-align: center; margin-bottom: 1.5rem; }
+    .main-content { display: none; }
+    footer { text-align: center; padding: 1rem; color: #555; font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+
+  <!-- LOGIN -->
+  <div class="container" id="loginScreen">
+    <div class="login-box">
+      <div class="card">
+        <h3><i class="bi bi-gear"></i> CONY Admin</h3>
+        <div class="mb-3">
+          <label class="form-label">Usuario</label>
+          <input type="text" class="form-control" id="loginUser" placeholder="admin_cony" autocomplete="username">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Contraseña</label>
+          <input type="password" class="form-control" id="loginPass" placeholder="••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-danger w-100" onclick="loginAdmin()">Entrar</button>
+        <div id="loginError" style="color:#e74c3c;font-size:.85rem;margin-top:.5rem;display:none"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content" id="mainContent">
+    <nav class="navbar navbar-expand-lg navbar-dark px-3">
+      <div class="container-fluid">
+        <span class="navbar-brand"><i class="bi bi-gear"></i> CONY · Administración</span>
+        <div class="d-flex align-items-center gap-3">
+          <span style="color:#888;font-size:.8rem"><i class="bi bi-person-circle"></i> <span id="navUser"></span></span>
+          <button class="btn btn-outline-light btn-sm" onclick="window.location.href='/'">⬅ Volver</button>
+          <button class="btn btn-danger btn-sm" onclick="logoutAdmin()">Salir</button>
+        </div>
+      </div>
+    </nav>
+
+    <ul class="nav nav-tabs px-3 pt-2" id="adminTabs" style="border-bottom-color:#0f3460">
+      <li class="nav-item"><button class="nav-link active" onclick="showTab('clientes',this)"><i class="bi bi-people"></i> Clientes</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showTab('cortes',this)"><i class="bi bi-cash-stack"></i> Cortes</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showTab('productos',this)"><i class="bi bi-box-seam"></i> Productos</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="showTab('estatus',this)"><i class="bi bi-clock-history"></i> Tiempos</button></li>
+    </ul>
+
+    <div class="container-fluid px-3 py-3">
+
+      <!-- TAB CLIENTES -->
+      <div class="tab-pane active show" id="tab-clientes">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 style="color:#e94560;margin:0"><i class="bi bi-people"></i> Clientes registrados</h6>
+          <span style="color:#888;font-size:.85rem" id="clientesCount">0 clientes</span>
+        </div>
+        <div class="card p-3">
+          <div class="mb-2"><input type="text" id="buscarCliente" class="form-control form-control-sm" placeholder="🔍 Buscar por nombre o teléfono..." style="max-width:300px" oninput="filtrarClientes()"></div>
+          <div id="clientesTable">Cargando...</div>
+        </div>
+        <div class="card p-3 mt-2" id="clienteDetalle" style="display:none">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 style="color:#e94560;margin:0"><i class="bi bi-person-badge"></i> <span id="detalleClienteNombre"></span></h6>
+            <button class="btn btn-outline-light btn-sm" onclick="cerrarDetalleCliente()">✕ Cerrar</button>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-md-4"><span style="color:#888">Teléfono:</span> <span id="detalleClienteTel"></span></div>
+            <div class="col-md-4"><span style="color:#888">Dirección:</span> <span id="detalleClienteDir"></span></div>
+            <div class="col-md-4"><span style="color:#888">Total gastado:</span> <span id="detalleClienteTotal"></span></div>
+          </div>
+          <h6 style="color:#888;font-size:.8rem;margin-top:.5rem">📋 Historial de pedidos</h6>
+          <div id="detallePedidos">Cargando...</div>
+        </div>
+      </div>
+
+      <!-- TAB CORTES -->
+      <div class="tab-pane" id="tab-cortes">
+        <h6 style="color:#e94560;margin-bottom:.5rem"><i class="bi bi-cash-stack"></i> Cortes de caja</h6>
+        <div class="card p-3">
+          <div id="cortesTable">Cargando...</div>
+        </div>
+        <div class="card p-3 mt-2" id="corteDetalle" style="display:none">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 style="color:#e94560;margin:0"><i class="bi bi-receipt"></i> Pedidos del Corte <span id="detalleCorteNum"></span></h6>
+            <button class="btn btn-outline-light btn-sm" onclick="cerrarDetalleCorte()">✕ Cerrar</button>
+          </div>
+          <div id="detalleCorteBody">Cargando...</div>
+        </div>
+      </div>
+
+      <!-- TAB PRODUCTOS -->
+      <div class="tab-pane" id="tab-productos">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 style="color:#e94560;margin:0"><i class="bi bi-box-seam"></i> Catálogo</h6>
+          <button class="btn btn-primary btn-sm" onclick="openProdModalAdmin()">+ Nuevo</button>
+        </div>
+        <div class="card p-3"><div id="prodAdminTable">Cargando...</div></div>
+      </div>
+
+    </div>
+
+    <!-- TAB TIEMPOS / ESTATUS LOG -->
+    <div class="tab-pane" id="tab-estatus">
+      <h6 style="color:#e94560;margin-bottom:.5rem"><i class="bi bi-clock-history"></i> Seguimiento de tiempos por pedido</h6>
+      <div class="card p-3">
+        <div class="mb-2"><input type="text" id="buscarFolio" class="form-control form-control-sm" placeholder="🔍 Buscar por folio o teléfono..." style="max-width:300px" oninput="cargarEstatusLog()"></div>
+        <div id="estatusLogBody">Cargando...</div>
+      </div>
+      <div class="card p-3 mt-2" id="estatusDetalle" style="display:none">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div><h6 style="color:#e94560;margin:0"><i class="bi bi-receipt"></i> Pedido <span id="estatusFolio"></span></h6></div>
+          <button class="btn btn-outline-light btn-sm" onclick="cerrarEstatusDetalle()">✕ Cerrar</button>
+        </div>
+        <div id="estatusTimeline">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- MODAL PRODUCTO ADMIN -->
+    <div class="modal fade" id="prodModalAdmin" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" id="prodModalAdminTitle">Nuevo producto</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="paId">
+        <div class="mb-2"><label class="form-label">Nombre</label><input type="text" id="paNombre" class="form-control" placeholder="Hot dog"></div>
+        <div class="mb-2"><label class="form-label">Categoría</label>
+          <select id="paCategoria" class="form-select">
+            <option>Hot dogs</option><option>Hot dogs especiales</option><option>Hamburguesas</option>
+            <option>Alitas</option><option>Aperitivos</option><option>Extras</option>
+          </select>
+        </div>
+        <div class="mb-2"><label class="form-label">Precio $</label><input type="number" id="paPrecio" step="0.5" class="form-control" placeholder="0"></div>
+        <div class="mb-2"><label class="form-label">Descripción</label><textarea id="paDescripcion" class="form-control" rows="2"></textarea></div>
+        <div class="mb-2"><label class="form-label">Emoji</label><input type="text" id="paEmoji" class="form-control" placeholder="🍔" maxlength="10"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger btn-sm" onclick="saveProdAdmin()">Guardar</button>
+      </div>
+    </div></div></div>
+
+    <!-- MODAL EDITAR CLIENTE -->
+    <div class="modal fade" id="modalEditarCliente" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" style="color:#e94560"><i class="bi bi-pencil"></i> Editar cliente</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ecId">
+        <div class="mb-2"><label class="form-label">Nombre</label><input type="text" id="ecNombre" class="form-control"></div>
+        <div class="mb-2"><label class="form-label">Teléfono</label><input type="text" id="ecTelefono" class="form-control" maxlength="10"></div>
+        <div class="mb-2"><label class="form-label">Dirección</label><input type="text" id="ecDireccion" class="form-control"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger btn-sm" onclick="saveClienteAdmin()">Guardar</button>
+      </div>
+    </div></div></div>
+
+    <footer>CONY Admin Panel</footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // ========== AUTENTICACIÓN ==========
+    let _token = localStorage.getItem('admin_token') || sessionStorage.getItem('admin_token');
+    let _user = localStorage.getItem('admin_user') || sessionStorage.getItem('admin_user');
+
+    function loginAdmin(){
+      const u = document.getElementById('loginUser').value.trim();
+      const p = document.getElementById('loginPass').value.trim();
+      if(!u || !p){ document.getElementById('loginError').textContent = 'Usuario y contraseña requeridos'; document.getElementById('loginError').style.display='block'; return; }
+      document.getElementById('loginError').style.display='none';
+      
+      fetch('/api/auth/login?user='+encodeURIComponent(u)+'&password='+encodeURIComponent(p))
+        .then(r => {
+          if(!r.ok) return r.json().then(e => { throw new Error(e.detail || 'Credenciales inválidas'); });
+          return r.json();
+        })
+        .then(d => {
+          if(d.rol !== 'superuser' && d.rol !== 'admin'){
+            document.getElementById('loginError').textContent = 'No tienes permisos de administración';
+            document.getElementById('loginError').style.display='block';
+            return;
+          }
+          // Guardar token para requests posteriores
+          _token = btoa(u+':'+p);  // Basic Auth token
+          _user = u;
+          localStorage.setItem('admin_token', _token);
+          localStorage.setItem('admin_user', _user);
+          iniciarAdmin();
+        })
+        .catch(e => {
+          document.getElementById('loginError').textContent = e.message || 'Error de conexión';
+          document.getElementById('loginError').style.display='block';
+        });
+    }
+
+    function logoutAdmin(){
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('admin_user');
+      sessionStorage.removeItem('admin_token');
+      sessionStorage.removeItem('admin_user');
+      _token = null;
+      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'block';
+    }
+
+    function api(p, o={}){
+      if(!_token) throw new Error('No auth');
+      o.headers = o.headers || {};
+      o.headers['Authorization'] = 'Basic ' + _token;
+      return fetch(p, o).then(r => {
+        if(r.status === 401){ logoutAdmin(); throw new Error('Sesión expirada'); }
+        if(!r.ok) return r.json().then(e => { throw new Error(e.detail || 'Error'); });
+        return r.json();
+      });
+    }
+    
+    function cargarAdminAuto(){
+      if(_token){
+        api('/api/me').then(me => {
+          if(me.rol === 'superuser' || me.rol === 'admin'){
+            iniciarAdmin();
+          } else {
+            localStorage.removeItem('admin_token');
+            _token = null;
+          }
+        }).catch(() => {
+          localStorage.removeItem('admin_token');
+          _token = null;
+        });
+      }
+    }
+
+    function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function formatMoney(n){ return '$' + Number(n || 0).toFixed(2); }
+
+    function iniciarAdmin(){
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      document.getElementById('navUser').textContent = _user;
+      cargarClientes();
+    }
+
+    // Auto-login si ya tiene token
+    cargarAdminAuto();
+
+    // ========== TABS ==========
+
+
+    // ========== CLIENTES ==========
+    let todosClientes = [];
+    
+    function cargarClientes(){
+      api('/api/admin/clientes').then(data => {
+        todosClientes = data;
+        document.getElementById('clientesCount').textContent = data.length + ' clientes';
+        renderClientes(data);
+      }).catch(() => {});
+    }
+    
+    function renderClientes(list){
+      if(!list.length){ document.getElementById('clientesTable').innerHTML = '<div class="text-muted">Sin clientes registrados</div>'; return; }
+      let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th></th><th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>Pedidos</th><th>Total</th><th></th></tr></thead><tbody>';
+      list.forEach(c => {
+        const inicial = (c.nombre||'?')[0].toUpperCase();
+        h += `<tr>
+          <td><div class="cliente-avatar">${inicial}</div></td>
+          <td><strong>${esc(c.nombre||'-')}</strong></td>
+          <td>${c.telefono||'-'}</td>
+          <td style="font-size:.8rem;color:#999">${esc(c.direccion||'Mostrador')}</td>
+          <td>${c.total_pedidos||0}</td>
+          <td><strong>${formatMoney(c.total_gastado)}</strong></td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="verCliente(${c.id})">Ver</button>
+            <button class="btn btn-outline-light btn-sm" onclick="editarClienteAdmin(${c.id},'${esc(c.nombre||'')}','${c.telefono||''}','${esc(c.direccion||'')}')">✏️</button>
+          </td>
+        </tr>`;
+      });
+      h += '</tbody></table></div>';
+      document.getElementById('clientesTable').innerHTML = h;
+    }
+    
+    function filtrarClientes(){
+      const q = document.getElementById('buscarCliente').value.toLowerCase().trim();
+      if(!q){ renderClientes(todosClientes); return; }
+      const filtrados = todosClientes.filter(c => (c.nombre||'').toLowerCase().includes(q) || (c.telefono||'').includes(q));
+      renderClientes(filtrados);
+    }
+    
+    function verCliente(id){
+      const c = todosClientes.find(x => x.id === id);
+      if(!c) return;
+      document.getElementById('detalleClienteNombre').textContent = c.nombre||'Sin nombre';
+      document.getElementById('detalleClienteTel').textContent = c.telefono||'-';
+      document.getElementById('detalleClienteDir').textContent = c.direccion||'Mostrador';
+      document.getElementById('detalleClienteTotal').textContent = formatMoney(c.total_gastado);
+      document.getElementById('clienteDetalle').style.display = 'block';
+      api('/api/admin/pedidos-cliente/'+id).then(pedidos => {
+        if(!pedidos.length){ document.getElementById('detallePedidos').innerHTML = '<div class="text-muted">Sin pedidos</div>'; return; }
+        let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Total</th><th>Método pago</th><th>Estado</th><th>Fecha</th><th>Productos</th></tr></thead><tbody>';
+        pedidos.forEach(p => {
+          let badge = p.estado===1?'badge-pendiente':p.estado===2?'badge-completado':p.estado===3?'badge-preparacion':'badge-cancelado';
+          let estatus = {1:'Pendiente',2:'Completado',3:'En prep.',0:'Cancelado'}[p.estado]||'Pendiente';
+          let prods = '';
+          try { const parsed = JSON.parse(p.productos||'[]'); prods = parsed.map(x => `${x.q}x ${x.n}`).join(', '); } catch(e){ prods = p.productos||'-'; }
+          h += `<tr><td style="font-size:.8rem">${p.folio||'-'}</td><td>${formatMoney(p.total)}</td><td>${esc(p.metodo_pago||'-')}</td><td><span class="badge ${badge}">${estatus}</span></td><td style="font-size:.75rem">${p.fecha?new Date(p.fecha).toLocaleString('es-MX'):'-'}</td><td style="font-size:.75rem;color:#aaa;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(prods)}">${esc(prods)}</td></tr>`;
+        });
+        h += '</tbody></table></div>';
+        document.getElementById('detallePedidos').innerHTML = h;
+      });
+    }
+    
+    function cerrarDetalleCliente(){ document.getElementById('clienteDetalle').style.display = 'none'; }
+
+    // ========== CORTES ==========
+    function cargarCortes(){
+      api('/api/admin/cortes-detalle').then(data => {
+        if(!data.length){ document.getElementById('cortesTable').innerHTML = '<div class="text-muted">Sin cortes registrados</div>'; return; }
+        let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>#</th><th>Estado</th><th>Apertura</th><th>Usuario</th><th>Cierre</th><th>Ped.</th><th>Efectivo</th><th>Tarjeta</th><th>Transferencia</th><th>Servicio</th><th>Total</th><th>💰 Ent.</th><th>Dif.</th><th></th></tr></thead><tbody>';
+        data.forEach(x => {
+          let diffHtml = '<span style="color:#888">-</span>';
+          if(x.estado === 'cerrado' && x.diferencia !== null && x.diferencia !== undefined){
+            if(x.diferencia === 0) diffHtml = '<span class="badge badge-cuadra">✅ 0</span>';
+            else diffHtml = `<span class="badge ${x.diferencia>0?'badge-sobrante':'badge-faltante'}">${x.diferencia>0?'Sobrante':'Faltante'} $${Math.abs(x.diferencia).toFixed(2)}</span>`;
+          }
+          let entregadoHtml = '<span style="color:#888">-</span>';
+          if(x.estado === 'cerrado' && x.efectivo_reportado !== null) entregadoHtml = formatMoney(x.efectivo_reportado);
+          h += `<tr><td>${x.id}</td><td><span class="badge ${x.estado==='abierto'?'bg-warning text-dark':'bg-secondary'}">${x.estado}</span></td><td style="font-size:.75rem">${x.fecha_apertura||'-'} ${x.hora_apertura||''}</td><td>${esc(x.usuario_apertura||'-')}</td><td style="font-size:.75rem">${x.fecha_cierre||'-'} ${x.hora_cierre||''}</td><td>${x.pedidos_count||0}</td><td>${formatMoney(x.total_efectivo||0)}</td><td>${formatMoney(x.total_tarjeta||0)}</td><td>${formatMoney(x.total_transferencia||0)}</td><td>${formatMoney(x.total_servicio||0)}</td><td><strong>${formatMoney(x.total_ventas)}</strong></td><td>${entregadoHtml}</td><td>${diffHtml}</td><td><button class="btn btn-primary btn-sm" onclick="verCorte(${x.id})">Ver</button></td></tr>`;
+        });
+        h += '</tbody></table></div>';
+        document.getElementById('cortesTable').innerHTML = h;
+      });
+    }
+    
+    function verCorte(id){
+      document.getElementById('detalleCorteNum').textContent = '#'+id;
+      document.getElementById('corteDetalle').style.display = 'block';
+      document.getElementById('detalleCorteBody').innerHTML = 'Cargando...';
+      api('/api/admin/pedidos-corte/'+id).then(pedidos => {
+        if(!pedidos.length){ document.getElementById('detalleCorteBody').innerHTML = '<div class="text-muted">Sin pedidos en este corte</div>'; return; }
+        let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Método pago</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>';
+        pedidos.forEach(p => {
+          let badge = p.estado===1?'badge-pendiente':p.estado===2?'badge-completado':p.estado===3?'badge-preparacion':'badge-cancelado';
+          let estatus = {1:'Pendiente',2:'Completado',3:'En prep.',0:'Cancelado'}[p.estado]||'Pendiente';
+          h += `<tr><td style="font-size:.8rem">${p.folio||'-'}</td><td>${esc(p.cliente_nombre||'Mostrador')}</td><td>${formatMoney(p.total)}</td><td>${esc(p.metodo_pago||'-')}</td><td><span class="badge ${badge}">${estatus}</span></td><td style="font-size:.75rem">${p.fecha?new Date(p.fecha).toLocaleString('es-MX'):'-'}</td></tr>`;
+        });
+        h += '</tbody></table></div>';
+        const total = pedidos.reduce((s,p) => s + (p.total||0), 0);
+        h += `<div style="margin-top:.5rem;padding:.5rem;background:#0f3460;border-radius:8px;font-weight:bold;text-align:right">TOTAL: ${formatMoney(total)} (${pedidos.length} pedidos)</div>`;
+        document.getElementById('detalleCorteBody').innerHTML = h;
+      });
+    }
+    
+    function cerrarDetalleCorte(){ document.getElementById('corteDetalle').style.display = 'none'; }
+
+    // ========== PRODUCTOS ==========
+    function cargarProductosAdmin(){
+      api('/api/productos').then(p => {
+        if(!p.length){ document.getElementById('prodAdminTable').innerHTML = '<div class="text-muted">Sin productos</div>'; return; }
+        let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>$</th><th>Disp.</th><th></th></tr></thead><tbody>';
+        p.forEach(x => {
+          h += `<tr><td>${x.id}</td><td>${x.emoji||''} ${esc(x.nombre)}</td><td>${esc(x.categoria)}</td><td>${x.precio.toFixed(2)}</td><td>${x.disponible?'Sí':'No'}</td><td>`+
+               `<button class="btn btn-primary btn-sm" onclick="editProdAdmin(${x.id},'${(x.nombre||'').replace(/'/g,"\\'")}','${(x.categoria||'').replace(/'/g,"\\'")}',${x.precio},'${(x.descripcion||'').replace(/'/g,"\\'")}','${(x.emoji||'').replace(/'/g,"\\'")}')"><i class="bi bi-pencil"></i></button> `+
+               `<button class="btn btn-danger btn-sm" onclick="if(confirm('Eliminar?')) delProdAdmin(${x.id})"><i class="bi bi-trash"></i></button>`+
+               `</td></tr>`;
+        });
+        h += '</tbody></table></div>';
+        document.getElementById('prodAdminTable').innerHTML = h;
+      });
+    }
+
+    function openProdModalAdmin(){
+      document.getElementById('prodModalAdminTitle').textContent = 'Nuevo producto';
+      document.getElementById('paId').value='';
+      document.getElementById('paNombre').value='';
+      document.getElementById('paPrecio').value='';
+      document.getElementById('paDescripcion').value='';
+      document.getElementById('paEmoji').value='';
+      new bootstrap.Modal(document.getElementById('prodModalAdmin')).show();
+    }
+
+    function editProdAdmin(id,n,c,p,d,e){
+      document.getElementById('prodModalAdminTitle').textContent = 'Editar producto';
+      document.getElementById('paId').value=id;
+      document.getElementById('paNombre').value=n;
+      document.getElementById('paCategoria').value=c;
+      document.getElementById('paPrecio').value=p;
+      document.getElementById('paDescripcion').value=d;
+      document.getElementById('paEmoji').value=e||'';
+      new bootstrap.Modal(document.getElementById('prodModalAdmin')).show();
+    }
+
+    function saveProdAdmin(){
+      const id = document.getElementById('paId').value;
+      const data = {
+        nombre: document.getElementById('paNombre').value,
+        categoria: document.getElementById('paCategoria').value,
+        precio: parseFloat(document.getElementById('paPrecio').value||0),
+        descripcion: document.getElementById('paDescripcion').value,
+        emoji: document.getElementById('paEmoji').value
+      };
+      if(!data.nombre || !data.precio){ alert('Nombre y precio obligatorios'); return; }
+      const url = id ? '/api/productos/'+id : '/api/productos/';
+      const m = id ? 'PUT' : 'POST';
+      api(url,{method:m,body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(()=>{
+        bootstrap.Modal.getInstance(document.getElementById('prodModalAdmin')).hide();
+        cargarProductosAdmin();
+      });
+    }
+
+    function delProdAdmin(id){
+      api('/api/productos/'+id,{method:'DELETE'}).then(()=>{ cargarProductosAdmin(); });
+    }
+
+    // Enter en login
+    document.addEventListener('keydown', e => {
+      if(e.key==='Enter' && document.getElementById('loginScreen').style.display !== 'none') loginAdmin();
+    });
+    // ========== TIEMPOS / ESTATUS LOG ==========
+    function cargarEstatusLog(){
+      const q = document.getElementById('buscarFolio').value.trim().toLowerCase();
+      // Cargar todos los pedidos recientes
+      api('/api/pedidos').then(pedidos => {
+        let filtrados = pedidos;
+        if(q) filtrados = pedidos.filter(p => (p.folio||'').toLowerCase().includes(q) || (p.cliente_nombre||'').toLowerCase().includes(q) || (p.telefono||'').includes(q));
+        if(!filtrados.length){ document.getElementById('estatusLogBody').innerHTML = '<div class="text-muted">Sin resultados</div>'; return; }
+        let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Método</th><th>Estatus</th><th>Creado</th><th></th></tr></thead><tbody>';
+        const estados = {1:'Pendiente',2:'Completado',3:'En prep.',0:'Cancelado'};
+        const badges = {1:'badge-pendiente',2:'badge-completado',3:'badge-preparacion',0:'badge-cancelado'};
+        filtrados.slice(0,50).forEach(p => {
+          h += `<tr><td style="font-size:.8rem">${p.folio||'-'}</td><td>${esc(p.cliente_nombre||'Mostrador')}</td><td>${formatMoney(p.total)}</td><td>${esc(p.metodo_pago||'-')}</td><td><span class="badge ${badges[p.estado]||'bg-secondary'}">${estados[p.estado]||'?'}</span></td><td style="font-size:.75rem">${p.fecha?new Date(p.fecha).toLocaleString('es-MX'):'-'}</td><td><button class="btn btn-primary btn-sm" onclick="verTimeline('${p.folio}',${p.id})">⏱ Ver tiempos</button></td></tr>`;
+        });
+        h += '</tbody></table></div>';
+        h += '<div style="color:#888;font-size:.8rem;margin-top:.5rem">Mostrando hasta 50 pedidos recientes</div>';
+        document.getElementById('estatusLogBody').innerHTML = h;
+      });
+    }
+    
+    function verTimeline(folio, pid){
+      document.getElementById('estatusFolio').textContent = folio || '#'+pid;
+      document.getElementById('estatusDetalle').style.display = 'block';
+      document.getElementById('estatusTimeline').innerHTML = 'Cargando...';
+      
+      api('/api/pedidos/'+pid+'/estatus-log').then(logs => {
+        if(!logs.length){
+          document.getElementById('estatusTimeline').innerHTML = '<div class="text-muted">Sin registro de cambios de estatus (el pedido se creó antes de implementar el log)</div>';
+          return;
+        }
+        let h = '<div style="position:relative;padding-left:2rem">';
+        logs.forEach((l, i) => {
+          const isLast = i === logs.length - 1;
+          const color = l.estatus_nuevo === 2 ? '#27ae60' : l.estatus_nuevo === 3 ? '#3498db' : l.estatus_nuevo === 0 ? '#e74c3c' : '#f39c12';
+          const emoji = l.estatus_nuevo === 2 ? '✅' : l.estatus_nuevo === 3 ? '👨‍🍳' : l.estatus_nuevo === 0 ? '❌' : '📋';
+          h += `<div style="border-left:2px solid ${isLast?color:'#0f3460'};padding:0 0 1rem 1rem;position:relative">`;
+          h += `<div style="position:absolute;left:-8px;top:4px;width:14px;height:14px;border-radius:50%;background:${color}"></div>`;
+          h += `<div style="font-weight:600;font-size:.85rem">${emoji} ${l.estatus_nuevo_texto}</div>`;
+          h += `<div style="color:#888;font-size:.8rem">${esc(l.usuario)} · ${new Date(l.fecha).toLocaleString('es-MX')}</div>`;
+          // Si hay estatus anterior y no es el primero, calcular tiempo transcurrido
+          if(i > 0){
+            const prev = new Date(logs[i-1].fecha);
+            const curr = new Date(l.fecha);
+            const diffMs = curr - prev;
+            const diffMin = Math.round(diffMs / 60000);
+            h += `<div style="color:#e94560;font-size:.8rem;margin-top:2px">⏱ +${diffMin} min</div>`;
+          }
+          h += '</div>';
+        });
+        h += '</div>';
+        // Tiempo total
+        if(logs.length > 1){
+          const first = new Date(logs[0].fecha);
+          const last = new Date(logs[logs.length-1].fecha);
+          const totalMin = Math.round((last - first) / 60000);
+          h += `<div style="margin-top:.5rem;padding:.5rem;background:#0f3460;border-radius:8px;font-weight:bold;text-align:center">⏱ Tiempo total: ${totalMin} minutos</div>`;
+        }
+        document.getElementById('estatusTimeline').innerHTML = h;
+      });
+    }
+    
+    function cerrarEstatusDetalle(){
+      document.getElementById('estatusDetalle').style.display = 'none';
+    }
+
+    // ========== CLIENTES: EDITAR ==========
+    function editarClienteAdmin(id, nombre, telefono, direccion){
+      document.getElementById('ecId').value = id;
+      document.getElementById('ecNombre').value = nombre;
+      document.getElementById('ecTelefono').value = telefono;
+      document.getElementById('ecDireccion').value = direccion;
+      new bootstrap.Modal(document.getElementById('modalEditarCliente')).show();
+    }
+
+    function saveClienteAdmin(){
+      const id = document.getElementById('ecId').value;
+      const data = {
+        nombre: document.getElementById('ecNombre').value.trim(),
+        telefono: document.getElementById('ecTelefono').value.trim(),
+        direccion: document.getElementById('ecDireccion').value.trim()
+      };
+      if(!data.nombre){ alert('Nombre obligatorio'); return; }
+      api('/api/clientes/'+id, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: {'Content-Type':'application/json'}
+      }).then(() => {
+        bootstrap.Modal.getInstance(document.getElementById('modalEditarCliente')).hide();
+        cargarClientes();
+      }).catch(e => { alert('Error: '+(e.message||e)); });
+    }
+
+    // Mostrar pestaña activa según lo que se cargue
+    function showTab(name,btn){
+      document.querySelectorAll('.tab-pane').forEach(t=>t.classList.remove('active','show'));
+      document.querySelectorAll('.nav-link').forEach(b=>b.classList.remove('active'));
+      document.getElementById('tab-'+name).classList.add('active','show');
+      if(btn) btn.classList.add('active');
+      if(name==='clientes') cargarClientes();
+      if(name==='cortes') cargarCortes();
+      if(name==='productos') cargarProductosAdmin();
+      if(name==='estatus') cargarEstatusLog();
+    }
+  </script>
+</body>
+</html>
