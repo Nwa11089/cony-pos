@@ -1,0 +1,13 @@
+-- CONY POS - Esquema de base de datos
+-- Generado desde /var/www/pos+ia/clientes/cony/db/cony.db
+
+-- Tablas principales ya migradas:
+-- usuarios (con bcrypt)
+-- productos (con complementos/salsas)
+-- pedidos
+-- cortes (con corte_productos)
+-- clientes
+-- complementos
+-- salsas
+-- producto_complementos
+-- producto_salsas
