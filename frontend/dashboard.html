@@ -34,6 +34,7 @@
     .badge-completado { background: #27ae60; color: #fff; }
     .badge-preparacion { background: #3498db; color: #fff; }
     .badge-cancelado { background: #e74c3c; color: #fff; }
+    .badge-entregado { background: #27ae60; color: #fff; }
     .badge-warning { background: #f39c12; color: #fff; }
     footer { text-align: center; padding: 1rem; color: #555; font-size: 0.8rem; }
     .tab-content { padding-top: 1rem; }
@@ -101,6 +102,7 @@
         <button class="btn btn-outline-success btn-sm" id="btnAbrirCorteNav" onclick="abrirCorte()" style="display:none"><i class="bi bi-cash-coin"></i> Abrir Corte</button>
         <button class="btn btn-outline-warning btn-sm" id="btnCerrarCorteNav" onclick="cerrarCorte()" style="display:none"><i class="bi bi-lock"></i> Cerrar Corte</button>
         <button class="btn btn-outline-light btn-sm" id="btnAdmin" onclick="abrirAdmin()" style="display:none"><i class="bi bi-gear"></i> Admin</button>
+        <button class="btn btn-outline-light btn-sm" id="btnQR" onclick="abrirQR()" style="display:none"><i class="bi bi-qr-code"></i> QR WhatsApp</button>
         <button class="btn btn-danger btn-sm" onclick="logout()">Salir</button>
       </div>
     </div>
@@ -299,10 +301,31 @@
         <select id="pCategoria" class="form-select">
           <option>Hot dogs</option><option>Hot dogs especiales</option><option>Hamburguesas</option>
           <option>Alitas</option><option>Aperitivos</option><option>Extras</option>
+          <option>Ingredientes</option>
         </select>
       </div>
       <div class="mb-2"><label class="form-label">Precio $</label><input type="number" id="pPrecio" step="0.5" class="form-control" placeholder="0"></div>
       <div class="mb-2"><label class="form-label">Descripción</label><textarea id="pDescripcion" class="form-control" rows="2"></textarea></div>
+      <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="pEsIngrediente" onchange="toggleIngredienteCampos()">
+        <label class="form-check-label" for="pEsIngrediente">🧂 Es ingrediente <small class="text-muted">(no aparece en comandero ni menú)</small></label>
+      </div>
+      <div id="ingredienteCampos" style="display:none;background:#1a1a2e;padding:12px;border-radius:8px">
+        <div class="row">
+          <div class="col-4 mb-2"><label class="form-label small">Stock actual</label><input type="number" id="pStock" step="0.1" class="form-control form-control-sm" placeholder="0"></div>
+          <div class="col-4 mb-2"><label class="form-label small">Stock mínimo</label><input type="number" id="pStockMinimo" step="0.1" class="form-control form-control-sm" placeholder="0"></div>
+          <div class="col-4 mb-2"><label class="form-label small">Unidad</label>
+            <select id="pUnidad" class="form-select form-select-sm">
+              <option value="pieza">Pieza</option>
+              <option value="gramo">Gramo</option>
+              <option value="kg">Kg</option>
+              <option value="ml">Ml</option>
+              <option value="litro">Litro</option>
+              <option value="porcion">Porción</option>
+            </select>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
@@ -317,8 +340,9 @@
       <div class="mb-2"><label class="form-label">Contraseña</label><input type="text" id="uPassword" class="form-control" placeholder="Mínimo 4"></div>
       <div class="mb-2"><label class="form-label">Rol</label>
         <select id="uRol" class="form-select">
-          <option value="user">👤 Empleado</option>
-          <option value="admin">👑 Admin</option>
+          <option value="user">Cajero</option>
+          <option value="admin">Admin</option>
+          <option value="repartidor">Repartidor</option>
         </select>
       </div>
       <div class="mb-2"><label class="form-label">Nombre real</label><input type="text" id="uNombreReal" class="form-control" placeholder="Nombre(s)"></div>
@@ -328,6 +352,23 @@
     <div class="modal-footer">
       <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
       <button class="btn btn-danger btn-sm" onclick="saveUsuario()">Crear</button>
+    </div>
+  </div></div></div>
+
+  <!-- MODAL INGREDIENTES DE PRODUCTO -->
+  <div class="modal fade" id="ingredientesModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">🧂 Ingredientes de <span id="ingProductoNombre"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body" id="ingredientesBody">
+      <p class="text-muted small">Selecciona los ingredientes que componen este producto y la cantidad que consume cada uno.</p>
+      <div id="ingredientesLista"></div>
+      <div id="ingSinIngredientes" class="text-center text-muted py-4" style="display:none">
+        <p style="font-size:2rem;margin-bottom:.5rem">📦</p>
+        <p>Aún no hay ingredientes registrados. Crea productos marcados como "Es ingrediente" primero.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+      <button class="btn btn-danger btn-sm" onclick="guardarIngredientes()">Guardar receta</button>
     </div>
   </div></div></div>
 
@@ -343,6 +384,23 @@
     <div class="modal-footer">
       <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
       <button class="btn btn-danger btn-sm" onclick="saveUsuarioDatos()">Guardar</button>
+    </div>
+  </div></div></div>
+
+  <!-- MODAL CAMBIAR CONTRASEÑA -->
+  <div class="modal fade" id="modalCambiarPassDash" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">🔑 Cambiar contraseña <small style="color:#999;font-weight:normal">(<span id="cpdNombreUser"></span>)</small></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="cpdUserId">
+      <div class="mb-2"><label class="form-label">Contraseña anterior</label>
+        <input type="password" id="cpdOldPass" class="form-control" placeholder="Contraseña actual"></div>
+      <div class="mb-2"><label class="form-label">Nueva contraseña</label>
+        <input type="password" id="cpdNewPass" class="form-control" placeholder="Nueva contraseña"></div>
+      <div id="cpdMsg" style="display:none;padding:.5rem;border-radius:6px;font-size:.85rem"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+      <button class="btn btn-danger btn-sm" onclick="guardarCambiarPassUser()">Guardar</button>
     </div>
   </div></div></div>
 
@@ -494,13 +552,22 @@
       { key: 'Extras', label: '➕ Extras' }
     ];
 
-    function logout(){ sessionStorage.clear(); window.location.href='/'; }
+    function logout(){
+      sessionStorage.clear();
+      // Redirigir sin causar popup nativo del navegador
+      window.location.replace('/');
+    }
 
     function api(p,o={}) {
       o.headers = o.headers || {};
       o.headers['Authorization'] = 'Basic ' + A;
       return fetch(p,o).then(r => {
-        if(r.status === 401){ logout(); throw new Error('401'); }
+        if(r.status === 401){
+          sessionStorage.clear();
+          // Redirigir suavemente SIN causar el popup HTTP Basic Auth del navegador
+          window.location.replace('/?expired=1');
+          throw new Error('401');
+        }
         if(!r.ok) return r.json().then(e => { throw new Error(e.detail || 'Err'); }).catch(() => { throw new Error('Err'); });
         return r.json();
       });
@@ -546,13 +613,14 @@
       });
       api('/api/productos').then(p => document.getElementById('dashProductos').textContent = p.filter(x=>x.disponible).length);
       api('/api/pedidos').then(p => {
-        document.getElementById('dashPendientes').textContent = p.filter(x=>x.estatus==='pendiente').length;
+        document.getElementById('dashPendientes').textContent = p.filter(x=>{ var e = x.estatus||x.estado||1; if(typeof e==='string'){ var m={pendiente:1,completado:2,'en-preparacion':3,cancelado:0,'pendiente-autorizacion':4,entregado:5}; e=m[e]||1; } return e===1; }).length;
         let r = p.slice(0,5);
         if(!r.length){ document.getElementById('dashRecent').innerHTML = '<div class="text-muted">Sin pedidos</div>'; return; }
-        let h = '<table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Estado</th></tr></thead><tbody>';
+        let h = '<table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Estado</th><th>Registró</th></tr></thead><tbody>';
         r.forEach(x => {
-          let badge = x.estatus==='pendiente' ? 'badge-pendiente' : x.estatus==='completado' ? 'badge-completado' : x.estatus==='en-preparacion' ? 'badge-preparacion' : x.estatus==='cancelado' ? 'badge-cancelado' : x.estatus==='pendiente-autorizacion' ? 'badge-warning' : 'badge-pendiente';
-          h += `<tr><td>${x.folio||'-'}</td><td>${x.cliente_nombre||'Mostrador'}</td><td>$${(x.total||0).toFixed(2)}</td><td><span class="badge ${badge}">${x.estatus||'pendiente'}</span></td></tr>`;
+          var est = x.estatus || x.estado || 1;
+          if(typeof est === 'string'){ var _m = {pendiente:1,completado:2,'en-preparacion':3,cancelado:0,'pendiente-autorizacion':4,entregado:5}; est = _m[est] || 1; }
+          h += `<tr><td>${x.folio||'-'}</td><td>${x.cliente_nombre||'Mostrador'}</td><td>$${(x.total||0).toFixed(2)}</td><td><span class="badge ${_estadoBadge(est)}">${_estadoLabel(est)}</span></td><td style="font-size:.75rem">${x.creado_por_nombre||'-'}</td></tr>`;
         });
         h += '</tbody></table>';
         document.getElementById('dashRecent').innerHTML = h;
@@ -562,10 +630,12 @@
     function loadProductos(){
       api('/api/productos').then(p => {
         if(!p.length){ document.getElementById('prodTable').innerHTML = '<div class="text-muted">Sin productos</div>'; return; }
-        let h = '<table class="table table-hover"><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>$</th><th>Disp.</th><th></th></tr></thead><tbody>';
+        let h = '<table class="table table-hover"><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>$</th><th>Tipo</th><th>Disp.</th><th></th></tr></thead><tbody>';
         p.forEach(x => {
-          h += `<tr><td>${x.id}</td><td>${x.nombre}</td><td>${x.categoria}</td><td>${x.precio.toFixed(2)}</td><td>${x.disponible?'Sí':'No'}</td><td>`+
-               `<button class="btn btn-primary btn-sm" onclick="editProd(${x.id},'${(x.nombre||'').replace(/'/g,"\\'")}','${(x.categoria||'').replace(/'/g,"\\'")}',${x.precio},'${(x.descripcion||'').replace(/'/g,"\\'")}')"><i class="bi bi-pencil"></i></button> `+
+          const tipoIcon = x.es_ingrediente ? '<span class="badge bg-secondary">🧂 Ingrediente</span>' : '<span class="badge bg-danger">🍽️ Plato</span>';
+          h += `<tr><td>${x.id}</td><td>${x.nombre}</td><td>${x.categoria}</td><td>${x.precio.toFixed(2)}</td><td>${tipoIcon}</td><td>${x.disponible?'Sí':'No'}</td><td>`+
+               `<button class="btn btn-primary btn-sm" onclick="editProd(${x.id},'${(x.nombre||'').replace(/'/g,"\\'")}','${(x.categoria||'').replace(/'/g,"\\'")}',${x.precio},'${(x.descripcion||'').replace(/'/g,"\\'")}',${x.es_ingrediente||0})"><i class="bi bi-pencil"></i></button> `+
+               (x.es_ingrediente ? '' : `<button class="btn btn-info btn-sm" onclick="abrirModalIngredientes(${x.id},'${(x.nombre||'').replace(/'/g,"\\'")}')"><i class="bi bi-egg-fried"></i> Ingredientes</button> `)+
                `<button class="btn btn-danger btn-sm" onclick="if(confirm('Eliminar?')) delProd(${x.id})"><i class="bi bi-trash"></i></button>`+
                `</td></tr>`;
         });
@@ -583,14 +653,21 @@
       new bootstrap.Modal(document.getElementById('prodModal')).show();
     }
 
-    function editProd(id,n,c,p,d){
+    function editProd(id,n,c,p,d,ingrediente){
       document.getElementById('prodModalTitle').textContent = 'Editar producto';
       document.getElementById('pId').value=id;
       document.getElementById('pNombre').value=n;
       document.getElementById('pCategoria').value=c;
       document.getElementById('pPrecio').value=p;
       document.getElementById('pDescripcion').value=d;
+      document.getElementById('pEsIngrediente').checked = ingrediente ? true : false;
+      toggleIngredienteCampos();
       new bootstrap.Modal(document.getElementById('prodModal')).show();
+    }
+
+    function toggleIngredienteCampos(){
+      const checked = document.getElementById('pEsIngrediente').checked;
+      document.getElementById('ingredienteCampos').style.display = checked ? 'block' : 'none';
     }
 
     function saveProducto(){
@@ -600,7 +677,11 @@
         categoria: document.getElementById('pCategoria').value,
         precio: parseFloat(document.getElementById('pPrecio').value||0),
         descripcion: document.getElementById('pDescripcion').value,
-        disponible: 1
+        disponible: 1,
+        es_ingrediente: document.getElementById('pEsIngrediente').checked ? 1 : 0,
+        stock: parseFloat(document.getElementById('pStock').value||0),
+        stock_minimo: parseFloat(document.getElementById('pStockMinimo').value||0),
+        unidad: document.getElementById('pUnidad').value
       };
       if(!data.nombre || !data.precio){ alert('Completa nombre y precio'); return; }
       const m = id ? 'PUT' : 'POST';
@@ -610,22 +691,104 @@
 
     function delProd(id){ api(`/api/productos/${id}`,{method:'DELETE'}).then(()=>{ loadProductos(); loadComandero(); }); }
 
+    // ============ INGREDIENTES / RECETAS ============
+    let ingredientesProductoId = null;
+    let ingredientesSeleccion = {};
+
+    function abrirModalIngredientes(pid, pNombre){
+      ingredientesProductoId = pid;
+      document.getElementById('ingProductoNombre').textContent = pNombre;
+      document.getElementById('ingredientesLista').innerHTML = '<div class="text-center py-3 text-muted">Cargando ingredientes...</div>';
+      document.getElementById('ingSinIngredientes').style.display = 'none';
+      new bootstrap.Modal(document.getElementById('ingredientesModal')).show();
+      // Cargar ingredientes disponibles y receta actual
+      Promise.all([
+        api('/api/productos/ingredientes'),
+        api('/api/recetas/' + pid)
+      ]).then(([ingredientes, recetaActual]) => {
+        ingredientesSeleccion = {};
+        recetaActual.forEach(r => { ingredientesSeleccion[r.ingrediente_id] = r.cantidad; });
+        if(!ingredientes.length){
+          document.getElementById('ingredientesLista').innerHTML = '';
+          document.getElementById('ingSinIngredientes').style.display = '';
+          return;
+        }
+        let h = '<div class="list-group" style="max-height:400px;overflow-y:auto">';
+        ingredientes.forEach(ing => {
+          const checked = ingredientesSeleccion[ing.id] ? 'checked' : '';
+          const cant = ingredientesSeleccion[ing.id] || 1;
+          h += `<div class="list-group-item" style="background:#1a1a2e;border-color:#2d3136;display:flex;align-items:center;gap:12px;padding:10px 14px">`;
+          h += `<input type="checkbox" class="form-check-input ingrediente-check" data-id="${ing.id}" ${checked} style="transform:scale(1.3)" onchange="toggleIngrediente(${ing.id})">`;
+          h += `<div style="flex:1"><strong>${ing.nombre}</strong> <small class="text-muted">(${ing.unidad})</small>`;
+          if(ing.stock !== null) h += ` <span class="badge ${ing.stock <= ing.stock_minimo ? 'bg-warning text-dark' : 'bg-secondary'}">Stock: ${ing.stock}</span>`;
+          h += `</div>`;
+          h += `<div style="display:flex;align-items:center;gap:6px">`;
+          h += `<label class="small text-muted">Cant:</label>`;
+          h += `<input type="number" class="form-control form-control-sm ingrediente-cant" data-id="${ing.id}" value="${cant}" min="0.1" step="0.5" style="width:80px" onchange="setIngredienteCant(${ing.id}, this.value)">`;
+          h += `</div></div>`;
+        });
+        h += '</div>';
+        document.getElementById('ingredientesLista').innerHTML = h;
+      }).catch(e => {
+        document.getElementById('ingredientesLista').innerHTML = '<div class="text-danger">Error cargando ingredientes</div>';
+      });
+    }
+
+    function toggleIngrediente(id){
+      const checked = document.querySelector(`.ingrediente-check[data-id="${id}"]`).checked;
+      if(checked){
+        const cant = parseFloat(document.querySelector(`.ingrediente-cant[data-id="${id}"]`).value) || 1;
+        ingredientesSeleccion[id] = cant;
+      } else {
+        delete ingredientesSeleccion[id];
+      }
+    }
+
+    function setIngredienteCant(id, val){
+      const checked = document.querySelector(`.ingrediente-check[data-id="${id}"]`).checked;
+      if(checked){
+        ingredientesSeleccion[id] = parseFloat(val) || 1;
+      }
+    }
+
+    function guardarIngredientes(){
+      const arr = Object.entries(ingredientesSeleccion).map(([id, cant]) => ({
+        ingrediente_id: parseInt(id),
+        cantidad: cant
+      }));
+      api('/api/recetas/' + ingredientesProductoId, {
+        method: 'POST',
+        body: JSON.stringify({ingredientes: arr}),
+        headers: {'Content-Type': 'application/json'}
+      }).then(r => {
+        bootstrap.Modal.getInstance(document.getElementById('ingredientesModal')).hide();
+        loadProductos();
+      }).catch(e => {
+        alert('Error guardando receta');
+      });
+    }
+
+    function _estadoTexto(e){ return e===1?'pendiente':e===2?'completado':e===3?'en-preparacion':e===0?'cancelado':e===4?'pendiente-autorizacion':e===5?'entregado':'pendiente'; }
+    function _estadoBadge(e){ return e===1?'badge-pendiente':e===2?'badge-completado':e===3?'badge-preparacion':e===0?'badge-cancelado':e===4?'badge-warning':e===5?'badge-entregado':'badge-pendiente'; }
+    function _estadoLabel(e){ return e===1?'Pendiente':e===2?'En Reparto':e===3?'Cocina':e===0?'Cancelado':e===4?'⏳ Pendiente Autorizar':e===5?'Entregado':'Pendiente'; }
+
     function loadPedidos(){
       api('/api/pedidos').then(p => {
         if(!p.length){ document.getElementById('pedidosTable').innerHTML = '<div class="text-muted">Sin pedidos</div>'; return; }
-        let h = '<table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Tel</th><th>Total</th><th>Estado</th><th>Pago</th><th>Fecha</th><th></th></tr></thead><tbody>';
+        let h = '<table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Tel</th><th>Total</th><th>Estado</th><th>Pago</th><th>Fecha</th><th>Registró</th><th></th></tr></thead><tbody>';
         p.forEach(x => {
-          let badge = x.estatus==='pendiente' ? 'badge-pendiente' : x.estatus==='completado' ? 'badge-completado' : x.estatus==='en-preparacion' ? 'badge-preparacion' : x.estatus==='cancelado' ? 'badge-cancelado' : x.estatus==='pendiente-autorizacion' ? 'badge-warning' : 'badge-pendiente';
+          var est = x.estatus || x.estado || 1;
+          if(typeof est === 'string'){ var _m = {pendiente:1,completado:2,'en-preparacion':3,cancelado:0,'pendiente-autorizacion':4,entregado:5}; est = _m[est] || 1; }
           h += `<tr><td>${x.folio||'-'}</td><td>${x.cliente_nombre||'-'}</td><td>${x.telefono||'-'}</td><td>$${(x.total||0).toFixed(2)}</td>`+
-               `<td><span class="badge ${badge}">${x.estatus||'pendiente'}</span></td><td>${x.metodo_pago||'-'}</td><td style="font-size:.75rem">${x.fecha?new Date(x.fecha).toLocaleString():'-'}</td>`+
+               `<td><span class="badge ${_estadoBadge(est)}">${_estadoLabel(est)}</span></td><td>${x.metodo_pago||'-'}</td><td style="font-size:.75rem">${x.fecha?new Date(x.fecha).toLocaleString():'-'}</td><td style="font-size:.75rem">${x.creado_por_nombre||'-'}</td>`+
                `<td style="white-space:nowrap">`+
                `<button class="btn btn-info btn-sm me-1" onclick="verDetallePedido(${x.id})" title="Ver detalle"><i class="bi bi-eye"></i></button>`+
                `<select class="form-select form-select-sm" style="display:inline-block;width:auto" onchange="cambiarEst(${x.id},this.value)">`+
-               `<option value="pendiente" ${x.estatus==='pendiente'?'selected':''}>Pendiente</option>`+
-               `<option value="en-preparacion" ${x.estatus==='en-preparacion'?'selected':''}>Cocina</option>`+
-               `<option value="completado" ${x.estatus==='completado'?'selected':''}>Listo</option>`+
-               `<option value="cancelado" ${x.estatus==='cancelado'?'selected':''}>Cancelar</option>
-               <option value="pendiente-autorizacion" ${x.estatus==='pendiente-autorizacion'?'selected':''}>⏳ Pendiente Autorizar</option>`+
+               `<option value="pendiente" ${est===1?'selected':''}>Pendiente</option>`+
+               `<option value="en-preparacion" ${est===3?'selected':''}>Cocina</option>`+
+               `<option value="completado" ${est===2?'selected':''}>En Reparto</option>`+
+               `<option value="cancelado" ${est===0?'selected':''}>Cancelar</option>
+               <option value="pendiente-autorizacion" ${est===4?'selected':''}>⏳ Pendiente Autorizar</option>`+
                `</select></td></tr>`;
         });
         h += '</tbody></table>';
@@ -633,7 +796,62 @@
       });
     }
 
-    function cambiarEst(id,e){ api(`/api/pedidos/${id}/estatus`,{method:'PUT',body:JSON.stringify({estatus:e}),headers:{'Content-Type':'application/json'}}).then(loadPedidos); }
+    function cambiarEst(id,e){
+      if(e === 'completado'){
+        // Interceptar: mostrar modal de asignar repartidor
+        abrirModalRepartidor(id);
+        // Resetear el select al valor anterior
+        document.querySelector(`select[onchange="cambiarEst(${id},this.value)"]`).value = 'en-preparacion';
+        return;
+      }
+      api(`/api/pedidos/${id}/estatus`,{method:'PUT',body:JSON.stringify({estatus:e}),headers:{'Content-Type':'application/json'}}).then(loadPedidos);
+    }
+    
+    function abrirModalRepartidor(pedidoId){
+      document.getElementById('asignarPedidoId').value = pedidoId;
+      const select = document.getElementById('asignarRepartidorSelect');
+      select.innerHTML = '<option value="">— Sin repartidor (Mostrador / Recoger local) —</option>';
+      select.disabled = true;
+      
+      api('/api/repartidores')
+        .then(reps => {
+          select.innerHTML = '<option value="">— Sin repartidor (Mostrador / Recoger local) —</option>';
+          reps.forEach(r => {
+            select.innerHTML += '<option value="'+r.id+'">🛵 '+esc(r.nombre)+'</option>';
+          });
+        })
+        .catch(e => console.error('Error cargando repartidores:', e))
+        .finally(() => { select.disabled = false; });
+      
+      new bootstrap.Modal(document.getElementById('modalAsignarRepartidor')).show();
+    }
+    
+    function confirmarAsignarRepartidor(){
+      const pedidoId = document.getElementById('asignarPedidoId').value;
+      const repartidorId = document.getElementById('asignarRepartidorSelect').value;
+      
+      if(repartidorId){
+        // Completar + asignar repartidor en una llamada
+        api('/api/pedidos/'+pedidoId+'/completar-con-repartidor', {
+          method:'PUT',
+          body:JSON.stringify({repartidor_id: parseInt(repartidorId)}),
+          headers:{'Content-Type':'application/json'}
+        }).then(() => {
+          bootstrap.Modal.getInstance(document.getElementById('modalAsignarRepartidor')).hide();
+          loadPedidos();
+        }).catch(e => alert('Error: '+(e.message||e)));
+      } else {
+        // Sin repartidor: solo cambiar estatus
+        api('/api/pedidos/'+pedidoId+'/estatus', {
+          method:'PUT',
+          body:JSON.stringify({estatus:'completado'}),
+          headers:{'Content-Type':'application/json'}
+        }).then(() => {
+          bootstrap.Modal.getInstance(document.getElementById('modalAsignarRepartidor')).hide();
+          loadPedidos();
+        }).catch(e => alert('Error: '+(e.message||e)));
+      }
+    }
 
     function verDetallePedido(id){
       api('/api/pedidos/'+id).then(p => {
@@ -678,11 +896,13 @@
       });
     }
 
+    function _rolLabel(r){ return r==='user'||r==='empleado'?'Cajero':r==='admin'?'Admin':r==='repartidor'?'Repartidor':r; }
+
     function loadUsuarios(){
       api('/api/usuarios').then(u => {
         document.getElementById('usersTabLi').style.display='list-item';
         let h = '<table class="table table-hover"><thead><tr><th>ID</th><th>Usuario</th><th>Nombre real</th><th>Teléfono</th><th>Rol</th><th>Activo</th><th></th></tr></thead><tbody>';
-        u.forEach(x => h += `<tr><td>${x.id}</td><td><strong>${esc(x.nombre)}</strong></td><td>${esc(x.nombre_real||'')} ${esc(x.apellidos||'')}</td><td>${x.telefono||'-'}</td><td>${x.rol}</td><td>${x.activo?'✅':'❌'}</td><td><button class="btn btn-primary btn-sm" onclick="editarUsuarioDatos(${x.id},'${esc(x.nombre)}','${esc(x.nombre_real||'')}','${esc(x.apellidos||'')}','${esc(x.telefono||'')}')">✏️</button></td></tr>`);
+        u.forEach(x => h += `<tr><td>${x.id}</td><td><strong>${esc(x.nombre)}</strong></td><td>${esc(x.nombre_real||'')} ${esc(x.apellidos||'')}</td><td>${x.telefono||'-'}</td><td>${_rolLabel(x.rol)}</td><td>${x.activo?'✅':'❌'}</td><td><button class="btn btn-primary btn-sm" onclick="editarUsuarioDatos(${x.id},'${esc(x.nombre)}','${esc(x.nombre_real||'')}','${esc(x.apellidos||'')}','${esc(x.telefono||'')}')" title="Editar usuario">✏️</button> <button class="btn btn-warning btn-sm" onclick="abrirCambiarPassUser(${x.id},'${esc(x.nombre)}')" title="Cambiar contraseña">🔑</button></td></tr>`);
         h += '</tbody></table>';
         document.getElementById('usersTable').innerHTML = h;
       }).catch(()=>document.getElementById('usersTabLi').style.display='none');
@@ -725,9 +945,52 @@
       api('/api/usuarios',{method:'POST',body:JSON.stringify(data),headers:{'Content-Type':'application/json'}}).then(()=>{ bootstrap.Modal.getInstance(document.getElementById('userModal')).hide(); loadUsuarios(); });
     }
 
+    function abrirCambiarPassUser(userId, userName){
+      document.getElementById('cpdUserId').value = userId;
+      document.getElementById('cpdNombreUser').textContent = userName;
+      document.getElementById('cpdOldPass').value = '';
+      document.getElementById('cpdNewPass').value = '';
+      document.getElementById('cpdMsg').style.display = 'none';
+      new bootstrap.Modal(document.getElementById('modalCambiarPassDash')).show();
+    }
+
+    function guardarCambiarPassUser(){
+      const userId = document.getElementById('cpdUserId').value;
+      const oldPass = document.getElementById('cpdOldPass').value.trim();
+      const newPass = document.getElementById('cpdNewPass').value.trim();
+      const msg = document.getElementById('cpdMsg');
+
+      if(!oldPass || !newPass){
+        msg.textContent = 'Completa ambos campos';
+        msg.style.color = '#e74c3c'; msg.style.display = 'block'; return;
+      }
+      if(newPass.length < 3){
+        msg.textContent = 'La nueva contraseña debe tener al menos 3 caracteres';
+        msg.style.color = '#e74c3c'; msg.style.display = 'block'; return;
+      }
+
+      msg.textContent = 'Verificando...';
+      msg.style.color = '#aaa'; msg.style.display = 'block';
+
+      api('/api/admin/cambiar-password', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({user_id: parseInt(userId), old_password: oldPass, new_password: newPass})
+      })
+      .then(res => {
+        msg.textContent = '✅ Contraseña actualizada';
+        msg.style.color = '#2ecc71'; msg.style.display = 'block';
+        setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('modalCambiarPassDash')).hide(), 1200);
+      })
+      .catch(e => {
+        msg.textContent = e.message || 'Error al cambiar contraseña';
+        msg.style.color = '#e74c3c'; msg.style.display = 'block';
+      });
+    }
+
     function loadComandero(){
       api('/api/productos').then(p => {
-        comanderoProductos = p.filter(x => x.disponible);
+        comanderoProductos = p.filter(x => x.disponible && !x.es_ingrediente);
         renderCategoriasComandero();
         renderProductosComandero();
       });
@@ -1343,6 +1606,7 @@
         document.getElementById('productosTabLi').style.display='none';
       } else {
         document.getElementById('btnAdmin').style.display='inline-block';
+        document.getElementById('btnQR').style.display='inline-block';
       }
       // Ahora verificar/abrir corte (después de tener el nombre real)
       verificarCorte();
@@ -1359,6 +1623,36 @@
       // Abre en nueva ventana sin arrastrar auth Basic del dominio
       window.open('/admin', '_blank', 'noopener,noreferrer');
     }
+    function abrirQR(){
+      window.open('/qr', '_blank', 'noopener,noreferrer');
+    }
   </script>
+<!-- MODAL ASIGNAR REPARTIDOR -->
+<div class="modal fade" id="modalAsignarRepartidor" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background:#1a1a2e;color:#fff;border:1px solid #0f3460">
+      <div class="modal-header" style="border-bottom:1px solid #0f3460">
+        <h5 class="modal-title" style="color:#e94560">🛵 Asignar repartidor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p style="color:#aaa;margin-bottom:12px">El pedido se marcará como <strong style="color:#2ecc71">LISTO</strong> y se notificará al cliente.</p>
+        <div class="mb-3">
+          <label style="color:#aaa;display:block;margin-bottom:6px">Asignar a repartidor:</label>
+          <select id="asignarRepartidorSelect" class="form-select" style="background:#0f3460;color:#fff;border:1px solid #1a1a4e">
+            <option value="">— Sin repartidor (Mostrador / Recoger local) —</option>
+          </select>
+          <small style="color:#666;display:block;margin-top:4px">Si no asignas repartidor, el pedido solo se marcará como listo sin notificación.</small>
+        </div>
+        <input type="hidden" id="asignarPedidoId">
+      </div>
+      <div class="modal-footer" style="border-top:1px solid #0f3460">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-success" onclick="confirmarAsignarRepartidor()" style="background:#2ecc71;border:none;font-weight:bold">✅ Confirmar Listo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

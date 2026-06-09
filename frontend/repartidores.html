@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONY - Repartidores</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:system-ui,sans-serif; background:#1a1a2e; color:#fff; min-height:100vh; }
+.login-container {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:20px;
+}
+.login-card {
+    background:#16213e; border-radius:16px; padding:40px; width:100%; max-width:400px;
+}
+.login-card h1 { color:#e94560; text-align:center; margin-bottom:8px; font-size:1.8em; }
+.login-card p { text-align:center; color:#aaa; margin-bottom:24px; }
+.login-card input {
+    width:100%; padding:12px 16px; margin-bottom:16px;
+    background:#0f3460; border:1px solid #1a1a4e; border-radius:8px;
+    color:#fff; font-size:16px;
+}
+.login-card input:focus { outline:2px solid #e94560; border-color:transparent; }
+.login-card button {
+    width:100%; padding:14px; background:#e94560; color:#fff;
+    border:none; border-radius:8px; font-size:16px; font-weight:bold; cursor:pointer;
+}
+.login-card button:hover { background:#d63850; }
+.login-card button:disabled { opacity:0.5; cursor:not-allowed; }
+.error { color:#ff6b6b; text-align:center; margin-top:12px; }
+
+.dashboard { display:none; }
+.header {
+    background:#16213e; padding:16px 24px; display:flex; justify-content:space-between;
+    align-items:center; border-bottom:1px solid #0f3460; flex-wrap:wrap; gap:10px;
+}
+.header h1 { color:#e94560; font-size:1.3em; }
+.header-tabs { display:flex; gap:8px; }
+.header-tabs button {
+    background:transparent; border:1px solid #0f3460; color:#888; padding:8px 16px;
+    border-radius:8px; cursor:pointer; font-size:.85rem;
+}
+.header-tabs button.active { background:#e94560; color:#fff; border-color:#e94560; }
+.header-info { display:flex; gap:16px; align-items:center; }
+.header-info span { color:#aaa; }
+.btn-logout { background:#e94560; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
+.content { max-width:1200px; margin:0 auto; padding:20px; }
+
+.pedidos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:16px; }
+.pedido-card {
+    background:#16213e; border-radius:12px; padding:20px;
+    border-left:4px solid #e94560; box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+.pedido-card.entregado-card { border-left-color:#2ecc71; opacity:0.8; }
+.pedido-header { display:flex; justify-content:space-between; align-items:start; margin-bottom:12px; }
+.pedido-folio { font-size:1.2em; font-weight:bold; }
+.pedido-estatus {
+    padding:4px 12px; border-radius:20px; font-size:0.8em; font-weight:bold;
+}
+.estatus-listo { background:#2ecc71; color:#fff; }
+.estatus-ruta { background:#3498db; color:#fff; }
+.estatus-entregado { background:#95a5a6; }
+.pedido-cliente { color:#e94560; font-weight:bold; margin-bottom:4px; }
+.pedido-detalle { color:#aaa; font-size:0.9em; margin-bottom:8px; line-height:1.5; }
+.pedido-detalle span { color:#ccc; }
+.pedido-productos { background:#0f3460; border-radius:8px; padding:10px; margin:10px 0; font-size:0.85em; }
+.pedido-total { font-size:1.2em; font-weight:bold; color:#2ecc71; margin:8px 0; }
+.pedido-acciones { display:flex; gap:8px; margin-top:12px; }
+.btn {
+    padding:10px 20px; border:none; border-radius:8px; font-weight:bold; cursor:pointer;
+    font-size:14px; flex:1; color:#fff;
+}
+.btn-ver { background:#3498db; }
+.btn-ver:hover { background:#2980b9; }
+.btn-ubicacion { background:#27ae60; }
+.btn-ubicacion:hover { background:#219a52; }
+.btn-entregar { background:#2ecc71; }
+.btn-entregar:hover { background:#27ae60; }
+.btn-entregar:disabled { opacity:0.4; cursor:not-allowed; }
+
+.modal-overlay {
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:rgba(0,0,0,0.7); z-index:1000; justify-content:center; align-items:center;
+}
+.modal {
+    background:#16213e; border-radius:16px; padding:32px; width:90%; max-width:500px;
+    max-height:80vh; overflow-y:auto;
+}
+.modal h2 { color:#e94560; margin-bottom:16px; }
+.modal .info { margin-bottom:12px; padding:8px 0; border-bottom:1px solid #0f3460; }
+.modal .info:last-child { border-bottom:none; }
+.modal .info span { color:#fff; font-weight:bold; }
+.close-modal { float:right; background:none; border:none; color:#e94560; font-size:24px; cursor:pointer; }
+.empty { text-align:center; padding:60px 20px; color:#666; font-size:1.2em; }
+.empty small { color:#555; font-size:.85rem; }
+
+@media (max-width:600px) {
+    .pedidos-grid { grid-template-columns:1fr; }
+    .header { flex-direction:column; text-align:center; }
+    .header-tabs { justify-content:center; }
+}
+</style>
+</head>
+<body>
+
+<div class="login-container" id="loginView">
+    <div class="login-card">
+        <h1>🛵 CONY</h1>
+        <p>Panel de Repartidores</p>
+        <input type="text" id="userInput" placeholder="Usuario" autocomplete="off">
+        <input type="password" id="passInput" placeholder="Contraseña">
+        <button id="loginBtn" onclick="login()">Ingresar</button>
+        <div class="error" id="loginError"></div>
+    </div>
+</div>
+
+<div class="dashboard" id="dashboardView">
+    <div class="header">
+        <h1>🛵 CONY - Repartidores</h1>
+        <div class="header-tabs">
+            <button id="tabPendientes" class="active" onclick="cambiarTab('pendientes')">📋 Pendientes</button>
+            <button id="tabEntregados" onclick="cambiarTab('entregados')">✅ Entregados hoy</button>
+        </div>
+        <div class="header-info">
+            <span id="repartidorName"></span>
+            <span id="pedidosCount">0 pendientes</span>
+            <button class="btn-logout" onclick="logout()">Salir</button>
+        </div>
+    </div>
+    <div class="content">
+        <div id="pedidosContainer" class="pedidos-grid"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="detalleModal">
+    <div class="modal">
+        <button class="close-modal" onclick="cerrarModal()">&times;</button>
+        <h2 id="detalleTitle">📋 Detalle del Pedido</h2>
+        <div id="detalleInfo"></div>
+        <div id="detalleAcciones" style="margin-top:16px;display:flex;gap:8px"></div>
+    </div>
+</div>
+
+<script>
+var token = null;
+var repartidorId = null;
+var repartidorNombre = '';
+var tabActual = 'pendientes';
+var pedidosCache = [];
+
+function login() {
+    var user = document.getElementById('userInput').value.trim();
+    var pass = document.getElementById('passInput').value.trim();
+    var btn = document.getElementById('loginBtn');
+    var err = document.getElementById('loginError');
+    if (!user || !pass) { err.textContent = 'Ingresa usuario y contraseña'; return; }
+    btn.disabled = true;
+    btn.textContent = 'Ingresando...';
+    err.textContent = '';
+
+    fetch('/api/repartidor/login?user=' + encodeURIComponent(user) + '&password=' + encodeURIComponent(pass))
+        .then(function(r) {
+            if (!r.ok) throw new Error('Credenciales invalidas o no eres repartidor');
+            return r.json();
+        })
+        .then(function(d) {
+            repartidorId = d.id;
+            repartidorNombre = d.nombre;
+            token = btoa(user + ':' + pass);
+            document.getElementById('loginView').style.display = 'none';
+            document.getElementById('dashboardView').style.display = 'block';
+            document.getElementById('repartidorName').textContent = '👤 ' + d.nombre;
+            cargarPedidos();
+            setInterval(cargarPedidos, 20000);
+        })
+        .catch(function(e) {
+            err.textContent = e.message || 'Error al iniciar sesion';
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.textContent = 'Ingresar';
+        });
+}
+
+function logout() {
+    token = null;
+    repartidorId = null;
+    document.getElementById('loginView').style.display = 'flex';
+    document.getElementById('dashboardView').style.display = 'none';
+    document.getElementById('userInput').value = '';
+    document.getElementById('passInput').value = '';
+    document.getElementById('loginError').textContent = '';
+}
+
+function cambiarTab(tab) {
+    tabActual = tab;
+    document.querySelectorAll('.header-tabs button').forEach(function(b) { b.classList.remove('active'); });
+    document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+    mostrarPedidos();
+}
+
+function cargarPedidos() {
+    if (!repartidorId || !token) return;
+    
+    // Cargar pendientes y entregados
+    fetch('/api/repartidor/' + repartidorId + '/pedidos', { headers: { 'Authorization': 'Basic ' + token } })
+        .then(function(r) { return r.json(); })
+        .then(function(pedidos) {
+            pedidosCache = pedidos;
+            // Tambien cargar entregados
+            fetch('/api/pedidos?entregados_por=' + repartidorId, { headers: { 'Authorization': 'Basic ' + token } })
+                .then(function(r) { return r.json(); })
+                .then(function(entregados) {
+                    pedidosCache = pedidos;
+                    pedidosCache._entregados = entregados.filter(function(p) { return p.entregado_por == 1; }) || [];
+                    mostrarPedidos();
+                })
+                .catch(function() { mostrarPedidos(); });
+        })
+        .catch(function(e) { console.error('Error cargando pedidos:', e); });
+}
+
+function mostrarPedidos() {
+    var container = document.getElementById('pedidosContainer');
+    var pendientes = pedidosCache || [];
+    var entregados = (pendientes._entregados || []).filter(function(p) { return p.entregado_por == 1; });
+    
+    // Quitar entregados de pendientes
+    pendientes = pendientes.filter(function(p) { return !p.entregado_por; });
+    
+    var lista = tabActual === 'entregados' ? entregados : pendientes;
+    document.getElementById('pedidosCount').textContent = pendientes.length + ' pendiente(s)';
+    
+    if (!lista.length) {
+        container.innerHTML = tabActual === 'entregados'
+            ? '<div class="empty">📭 No has entregado pedidos hoy</div>'
+            : '<div class="empty">✅ No tienes pedidos pendientes. ¡Descansa! 🛵</div>';
+        return;
+    }
+    
+    var html = '';
+    for (var i = 0; i < lista.length; i++) {
+        html += renderPedidoCard(lista[i]);
+    }
+    container.innerHTML = html;
+}
+
+function renderPedidoCard(p) {
+    var isEntregado = p.entregado_por == 1;
+    var estatusClase = isEntregado ? 'estatus-entregado' : (p.estado >= 2 ? 'estatus-ruta' : 'estatus-listo');
+    var estatusTexto = isEntregado ? 'Entregado' : (p.estado >= 2 ? 'En ruta' : 'Listo');
+    var cardClase = isEntregado ? 'pedido-card entregado-card' : 'pedido-card';
+    
+    var prodsHTML = '';
+    try {
+        var productos = typeof p.productos === 'string' ? JSON.parse(p.productos) : (p.productos || []);
+        for (var i = 0; i < productos.length; i++) {
+            var pr = productos[i];
+            prodsHTML += (pr.cantidad || 1) + 'x ' + (pr.nombre || 'Producto');
+            if (pr.nota) prodsHTML += ' (' + pr.nota + ')';
+            prodsHTML += '<br>';
+        }
+    } catch(e) {}
+    if (!prodsHTML) prodsHTML = p.nota || 'Pedido sin especificar';
+    
+    var jsonStr = JSON.stringify(p).replace(/'/g, "&#39;");
+    
+    var direccion = p.direccion || '';
+    var mapsLink = direccion ? 'https://www.google.com/maps/search/' + encodeURIComponent(direccion) : '';
+    
+    var acciones = '';
+    acciones += '<button class="btn btn-ver" onclick="verDetalle(' + p.id + ')">👁 Ver</button>';
+    if (direccion) {
+        acciones += '<button class="btn btn-ubicacion" onclick="window.open(\'' + mapsLink + '\',\'_blank\')">📍 Mapa</button>';
+    }
+    if (!isEntregado) {
+        acciones += '<button class="btn btn-entregar" onclick="marcarEntregado(' + p.id + ')">✅ Entregado</button>';
+    }
+    
+    return '<div class="' + cardClase + '">' +
+        '<div class="pedido-header">' +
+            '<span class="pedido-folio">#' + (p.folio || p.id) + '</span>' +
+            '<span class="pedido-estatus ' + estatusClase + '">' + estatusTexto + '</span>' +
+        '</div>' +
+        '<div class="pedido-cliente">👤 ' + esc(p.cliente_nombre || 'Cliente') + '</div>' +
+        '<div class="pedido-detalle">📍 <span>' + esc(p.direccion || 'Mostrador') + '</span><br>📱 <span>' + esc(p.telefono || '') + '</span></div>' +
+        '<div class="pedido-productos">' + prodsHTML + '</div>' +
+        '<div class="pedido-total">$' + (p.total || 0).toFixed(2) + '</div>' +
+        '<div class="pedido-acciones">' + acciones + '</div>' +
+    '</div>';
+}
+
+function verDetalle(pedidoId) {
+    fetch('/api/pedidos/' + pedidoId, { headers: { 'Authorization': 'Basic ' + token } })
+        .then(function(r) { return r.json(); })
+        .then(function(p) {
+            document.getElementById('detalleModal').style.display = 'flex';
+            document.getElementById('detalleTitle').textContent = '📋 Pedido #' + (p.folio || p.id);
+            
+            var prodsHTML = '';
+            var productos = p.productos_lista || [];
+            for (var i = 0; i < productos.length; i++) {
+                var pr = productos[i];
+                var nombre = pr.n || pr.nombre || pr.producto || 'Producto';
+                var cant = pr.q || pr.cant || pr.cantidad || 1;
+                var precio = pr.p || pr.precio || 0;
+                prodsHTML += '<div class="info"><span>' + (i+1) + '. ' + nombre + ' x' + cant + ' - $' + (precio * cant).toFixed(2) + '</span></div>';
+            }
+            if (!prodsHTML) prodsHTML = '<div class="info">Nota: ' + esc(p.nota || 'Sin detalle') + '</div>';
+            
+            var direccion = p.direccion || '';
+            var mapsLink = direccion ? 'https://www.google.com/maps/search/' + encodeURIComponent(direccion) : '';
+            
+            document.getElementById('detalleInfo').innerHTML =
+                '<div class="info">Folio: <span>#' + (p.folio || p.id) + '</span></div>' +
+                '<div class="info">Cliente: <span>' + esc(p.cliente_nombre || 'N/A') + '</span></div>' +
+                '<div class="info">Telefono: <span>' + esc(p.telefono || 'N/A') + '</span></div>' +
+                '<div class="info">Direccion: <span>' + esc(direccion || 'Mostrador') + '</span></div>' +
+                (direccion ? '<div class="info"><a href="' + mapsLink + '" target="_blank" style="color:#27ae60;font-weight:bold">📍 Ver en Google Maps</a></div>' : '') +
+                '<div class="info">Metodo pago: <span>' + esc(p.metodo_pago || 'Efectivo') + '</span></div>' +
+                '<div class="info">Total: <span>$' + (p.total || 0).toFixed(2) + '</span></div>' +
+                '<div style="margin-top:12px;"><strong>Productos:</strong></div>' + prodsHTML;
+            
+            var accionHTML = '<button class="btn btn-ver" onclick="cerrarModal()">🔙 Cerrar</button>';
+            if (!p.entregado_por) {
+                accionHTML += '<button class="btn btn-entregar" onclick="marcarEntregado(' + p.id + ')">✅ Entregado</button>';
+            }
+            if (direccion) {
+                accionHTML += '<button class="btn btn-ubicacion" onclick="window.open(\'' + mapsLink + '\',\'_blank\')">📍 Google Maps</button>';
+            }
+            document.getElementById('detalleAcciones').innerHTML = accionHTML;
+        })
+        .catch(function(e) { alert('Error al cargar detalle: ' + (e.message || e)); });
+}
+
+function cerrarModal() {
+    document.getElementById('detalleModal').style.display = 'none';
+}
+
+function marcarEntregado(pedidoId) {
+    if (!confirm('¿Confirmas que este pedido fue ENTREGADO?')) return;
+    fetch('/api/pedidos/' + pedidoId + '/entregar', {
+        method: 'PUT',
+        headers: { 'Authorization': 'Basic ' + token }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        cerrarModal();
+        cargarPedidos();
+    })
+    .catch(function(e) { alert('Error al marcar entregado: ' + e.message); });
+}
+
+function esc(s) { if (!s) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+document.getElementById('detalleModal').onclick = function(e) {
+    if (e.target === this) cerrarModal();
+};
+
+document.getElementById('passInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') login();
+});
+document.getElementById('userInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') document.getElementById('passInput').focus();
+});
+</script>
+</body>
+</html>

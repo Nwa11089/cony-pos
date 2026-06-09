@@ -56,10 +56,6 @@ class ProductoIn(BaseModel):
     descripcion: Optional[str] = ""
     emoji: Optional[str] = ""
     disponible: Optional[int] = 1
-    es_ingrediente: Optional[int] = 0
-    stock: Optional[float] = 0
-    stock_minimo: Optional[float] = 0
-    unidad: Optional[str] = "pieza"
 
 class UsuarioIn(BaseModel):
     nombre: str
@@ -195,7 +191,7 @@ def get_favicon():
 def menu_publico():
     """Endpoint público para el menú digital - no requiere autenticación"""
     conn = get_db()
-    cursor = conn.execute("SELECT id, nombre, categoria, precio, emoji, disponible FROM productos WHERE (disponible=1 OR disponible IS NULL) AND (es_ingrediente IS NULL OR es_ingrediente=0) ORDER BY categoria, nombre")
+    cursor = conn.execute("SELECT id, nombre, categoria, precio, emoji, disponible FROM productos WHERE disponible=1 OR disponible IS NULL ORDER BY categoria, nombre")
     productos = []
     for row in cursor.fetchall():
         p = dict(row)
@@ -219,8 +215,8 @@ def crear_producto(p: ProductoIn, user: dict = Depends(authenticate)):
         raise HTTPException(403, "Sin permisos")
     conn = get_db()
     conn.execute(
-        "INSERT INTO productos (nombre, categoria, precio, descripcion, emoji, disponible, es_ingrediente, stock, stock_minimo, unidad) VALUES (?,?,?,?,?,?,?,?,?,?)",
-        (p.nombre, p.categoria, p.precio, p.descripcion, p.emoji, p.disponible, p.es_ingrediente, p.stock, p.stock_minimo, p.unidad)
+        "INSERT INTO productos (nombre, categoria, precio, descripcion, emoji, disponible) VALUES (?,?,?,?,?,?)",
+        (p.nombre, p.categoria, p.precio, p.descripcion, p.emoji, p.disponible)
     )
     conn.commit()
     conn.close()
@@ -232,8 +228,8 @@ def actualizar_producto(pid: int, p: ProductoIn, user: dict = Depends(authentica
         raise HTTPException(403, "Sin permisos")
     conn = get_db()
     conn.execute(
-        "UPDATE productos SET nombre=?, categoria=?, precio=?, descripcion=?, emoji=?, disponible=?, es_ingrediente=?, stock=?, stock_minimo=?, unidad=? WHERE id=?",
-        (p.nombre, p.categoria, p.precio, p.descripcion, p.emoji, p.disponible, p.es_ingrediente, p.stock, p.stock_minimo, p.unidad, pid)
+        "UPDATE productos SET nombre=?, categoria=?, precio=?, descripcion=?, emoji=?, disponible=? WHERE id=?",
+        (p.nombre, p.categoria, p.precio, p.descripcion, p.emoji, p.disponible, pid)
     )
     conn.commit()
     conn.close()
@@ -245,72 +241,6 @@ def eliminar_producto(pid: int, user: dict = Depends(authenticate)):
         raise HTTPException(403, "Sin permisos")
     conn = get_db()
     conn.execute("DELETE FROM productos WHERE id=?", (pid,))
-    conn.commit()
-    conn.close()
-    return {"status": "ok"}
-
-@app.get("/api/productos/ingredientes")
-def listar_ingredientes(user: dict = Depends(authenticate)):
-    """Solo productos marcados como ingredientes (para el modal de recetas)"""
-    conn = get_db()
-    cursor = conn.execute("SELECT id, nombre, categoria, precio, stock, stock_minimo, unidad FROM productos WHERE es_ingrediente=1 ORDER BY nombre")
-    rows = [dict(r) for r in cursor.fetchall()]
-    conn.close()
-    return rows
-
-# ==================== RECETAS ====================
-@app.get("/api/recetas/{producto_id}")
-def listar_recetas(producto_id: int, user: dict = Depends(authenticate)):
-    """Obtener ingredientes de una receta"""
-    conn = get_db()
-    rows = conn.execute("""
-        SELECT r.id, r.ingrediente_id, r.cantidad, p.nombre as ingrediente_nombre,
-               p.unidad, p.stock, p.stock_minimo
-        FROM recetas r
-        JOIN productos p ON p.id = r.ingrediente_id
-        WHERE r.producto_id = ?
-        ORDER BY p.nombre
-    """, (producto_id,)).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-@app.post("/api/recetas/{producto_id}")
-def guardar_receta(producto_id: int, data: dict, user: dict = Depends(authenticate)):
-    """Recibe {ingredientes: [{ingrediente_id, cantidad},...]} y reemplaza la receta"""
-    if user["rol"] not in ("superuser", "admin"):
-        raise HTTPException(403, "Sin permisos")
-    conn = get_db()
-    conn.execute("DELETE FROM recetas WHERE producto_id=?", (producto_id,))
-    for ing in data.get("ingredientes", []):
-        conn.execute(
-            "INSERT INTO recetas (producto_id, ingrediente_id, cantidad) VALUES (?,?,?)",
-            (producto_id, ing["ingrediente_id"], ing["cantidad"])
-        )
-    conn.commit()
-    conn.close()
-    return {"status": "ok"}
-
-@app.get("/api/inventario")
-def listar_inventario(user: dict = Depends(authenticate)):
-    """Inventario completo: todos los ingredientes con su stock"""
-    conn = get_db()
-    rows = conn.execute("""
-        SELECT id, nombre, categoria, stock, stock_minimo, unidad,
-               CASE WHEN stock <= stock_minimo THEN 1 ELSE 0 END as bajo_stock
-        FROM productos WHERE es_ingrediente=1
-        ORDER BY nombre
-    """).fetchall()
-    conn.close()
-    return [dict(r) for r in rows]
-
-@app.put("/api/inventario/{pid}")
-def actualizar_stock(pid: int, data: dict, user: dict = Depends(authenticate)):
-    """Actualizar stock de un ingrediente"""
-    if user["rol"] not in ("superuser", "admin"):
-        raise HTTPException(403, "Sin permisos")
-    conn = get_db()
-    conn.execute("UPDATE productos SET stock=? WHERE id=? AND es_ingrediente=1",
-                 (data.get("stock", 0), pid))
     conn.commit()
     conn.close()
     return {"status": "ok"}
@@ -642,7 +572,6 @@ def comandar_directo(data: dict, user: dict = Depends(authenticate)):
     
     db = globals().get("DB_PATH", "/var/www/pos+ia/clientes/cony/cony_rest/cony_cony.db")
     conn = sqlite3.connect(db)
-    conn.row_factory = sqlite3.Row
     c = conn.cursor()
     
     try:
@@ -763,21 +692,6 @@ def comandar_directo(data: dict, user: dict = Depends(authenticate)):
         # Incrementar métrica del día
         hoy = now_mx().strftime("%Y-%m-%d")
         conn.execute("INSERT INTO metricas (fecha, pedidos_recibidos) VALUES (?, 1) ON CONFLICT(fecha) DO UPDATE SET pedidos_recibidos = pedidos_recibidos + 1", (hoy,))
-        # === DESCONTAR INVENTARIO ===
-        try:
-            for p in prds_list:
-                prod_id = p.get("id", 0)
-                cantidad_vendida = p.get("cantidad", 1)
-                # Buscar receta de este producto
-                recetas = conn.execute("SELECT ingrediente_id, cantidad FROM recetas WHERE producto_id=?", (prod_id,)).fetchall()
-                for rec in recetas:
-                    ing_id = rec["ingrediente_id"]
-                    cant_necesaria = rec["cantidad"] * cantidad_vendida
-                    conn.execute("UPDATE productos SET stock = MAX(0, stock - ?) WHERE id=? AND es_ingrediente=1",
-                                 (cant_necesaria, ing_id))
-        except Exception as e_ing:
-            print(f"[WARN] Error descontando inventario: {e_ing}")
-
         conn.commit()
         conn.close()
         return {"status": "ok", "pedido_id": pedido_id, "folio": folio, "message": f"Pedido registrado. Folio: {folio}"}

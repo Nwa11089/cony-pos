@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Menú Digital - Cony Rest</title>
+    <style>
+        :root {
+            --bg: #0f0f0f;
+            --surface: #1a1a1a;
+            --primary: #e94560;
+            --primary-hover: #ff6b6b;
+            --text: #eee;
+            --text-muted: #888;
+            --card-bg: #222;
+            --card-border: #333;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* Layout principal */
+        .app-layout { display: flex; height: 100vh; max-width: 1400px; margin: 0 auto; }
+        
+        /* Columna izquierda: productos */
+        .col-productos { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+        .col-comandero { width: 400px; min-width: 380px; background: var(--surface); border-left: 1px solid var(--card-border); display: flex; flex-direction: column; }
+
+        /* Header menú */
+        .pd-header { background: var(--surface); padding: 16px 20px; border-bottom: 1px solid var(--card-border); }
+        .pd-header h1 { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #e94560, #ff6b6b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .pd-subtitle { color: var(--text-muted); font-size: .8rem; margin-top: 2px; }
+
+        /* Grupos */
+        .pd-grupos { display: flex; gap: 8px; padding: 12px 20px; overflow-x: auto; flex-wrap: wrap; background: var(--surface); border-bottom: 1px solid var(--card-border); }
+        .pd-grupo-tab { background: var(--card-bg); color: var(--text-muted); border: 1px solid var(--card-border); padding: 7px 16px; border-radius: 20px; font-size: .82rem; cursor: pointer; transition: .2s; white-space: nowrap; }
+        .pd-grupo-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+        .pd-grupo-tab:hover { border-color: var(--primary); }
+
+        /* Categorías */
+        .pd-categorias { display: flex; gap: 6px; padding: 10px 20px; overflow-x: auto; background: var(--bg); }
+        .pd-cat-chip { background: var(--card-bg); color: var(--text-muted); border: 1px solid var(--card-border); padding: 5px 12px; border-radius: 14px; font-size: .78rem; cursor: pointer; transition: .2s; white-space: nowrap; }
+        .pd-cat-chip.active { background: #333; color: var(--text); border-color: var(--primary); }
+
+        /* Grid productos (scroll) */
+        .pd-scroll { flex: 1; overflow-y: auto; padding: 12px 20px; }
+        .pd-productos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .pd-prod-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px 10px; cursor: pointer; transition: .2s; text-align: center; }
+        .pd-prod-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 20px rgba(233,69,96,.15); }
+        .pd-prod-card .emoji { font-size: 2rem; margin-bottom: 4px; }
+        .pd-prod-card .name { font-weight: 600; font-size: .85rem; margin-bottom: 4px; line-height: 1.2; }
+        .pd-prod-card .price { color: var(--primary); font-weight: 700; font-size: .9rem; }
+
+        /* Comandero - header */
+        .cmd-header { padding: 16px 18px; border-bottom: 1px solid var(--card-border); display: flex; align-items: center; justify-content: space-between; }
+        .cmd-header h2 { font-size: 1.1rem; }
+        .cmd-header h2 span { color: var(--primary); }
+        .cmd-clear { color: var(--text-muted); background: none; border: none; cursor: pointer; font-size: .8rem; padding: 4px 8px; border-radius: 6px; }
+        .cmd-clear:hover { color: var(--primary); background: rgba(233,69,96,.1); }
+
+        /* Comandero - items (scroll) */
+        .cmd-items { flex: 1; overflow-y: auto; padding: 10px 14px; }
+        .cmd-empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: .9rem; }
+        .cmd-empty .icon { font-size: 3rem; margin-bottom: 10px; }
+        .cmd-item { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; transition: .2s; }
+        .cmd-item-top { display: flex; align-items: center; gap: 8px; }
+        .cmd-item-qty { display: flex; align-items: center; gap: 6px; }
+        .cmd-item-qty button { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--card-border); background: transparent; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: .9rem; line-height: 1; }
+        .cmd-item-qty button:hover { border-color: var(--primary); }
+        .cmd-item-qty span { min-width: 20px; text-align: center; font-weight: 700; font-size: .9rem; }
+        .cmd-item-name { flex: 1; font-size: .85rem; font-weight: 500; }
+        .cmd-item-price { color: var(--primary); font-weight: 700; font-size: .9rem; }
+        .cmd-item-remove { color: var(--text-muted); background: none; border: none; cursor: pointer; font-size: 1rem; padding: 2px 4px; }
+        .cmd-item-remove:hover { color: var(--primary); }
+        .cmd-item-extras { font-size: .75rem; color: var(--text-muted); margin-top: 4px; padding-left: 4px; }
+
+        /* Comandero - footer (total + enviar) */
+        .cmd-footer { padding: 14px 18px; border-top: 1px solid var(--card-border); }
+        .cmd-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .cmd-total-label { color: var(--text-muted); font-size: .85rem; }
+        .cmd-total-amount { font-size: 1.3rem; font-weight: 800; }
+
+        /* Formulario compacto */
+        .cmd-form input, .cmd-form textarea, .cmd-form select { width: 100%; padding: 8px 12px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; color: var(--text); margin-bottom: 6px; font-size: .82rem; }
+        .cmd-form input:focus, .cmd-form textarea:focus, .cmd-form select:focus { outline: none; border-color: var(--primary); }
+        .cmd-form label { display: block; color: var(--text-muted); font-size: .75rem; margin-bottom: 2px; }
+        .cmd-form-row { display: flex; gap: 8px; }
+        .cmd-form-row > * { flex: 1; }
+
+        .cmd-btn-send { width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: .2s; }
+        .cmd-btn-send:hover { opacity: .9; transform: scale(1.01); }
+        .cmd-btn-send:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+        /* Modal personalizadores */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.85); display: none; align-items: center; justify-content: center; z-index: 999; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--surface); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .modal-header h3 { font-size: 1.15rem; }
+        .modal-body { margin-bottom: 16px; max-height: 300px; overflow-y: auto; }
+        .extra-opcion { padding: 8px 12px; background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px; margin-bottom: 6px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; font-size: .85rem; transition: .2s; }
+        .extra-opcion.selected { border-color: var(--primary); background: #2a1a1f; }
+        .modal-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .modal-qty { display: flex; align-items: center; gap: 12px; background: var(--card-bg); border-radius: 8px; padding: 8px 12px; }
+        .modal-qty .btn-qty { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--card-border); background: transparent; color: var(--text); cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+        .modal-qty span { font-weight: 700; font-size: 1.1rem; min-width: 30px; text-align: center; }
+        .btn-primary { background: var(--primary); color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-icon { background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; padding: 4px; }
+
+        /* Toast */
+        .toast-msg { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 12px 24px; border-radius: 10px; z-index: 9999; font-size: .9rem; box-shadow: 0 4px 20px rgba(0,0,0,.5); display: none; }
+        .toast-msg.show { display: block; animation: fadeIn .3s; }
+        .toast-msg.success { border-left: 4px solid var(--success); }
+        .toast-msg.error { border-left: 4px solid var(--primary); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+        /* Enviado overlay */
+        .sent-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.9); z-index: 9998; display: none; align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 40px; }
+        .sent-overlay.active { display: flex; }
+        .sent-overlay .big { font-size: 4rem; margin-bottom: 16px; }
+        .sent-overlay h2 { font-size: 1.6rem; margin-bottom: 8px; }
+        .sent-overlay p { color: var(--text-muted); margin-bottom: 24px; max-width: 320px; }
+        .sent-overlay button { background: var(--primary); color: #fff; border: none; padding: 14px 40px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        /* Responsive */
+        @media (max-width: 800px) {
+            .app-layout { flex-direction: column; height: auto; min-height: 100vh; }
+            .col-comandero { width: 100%; min-width: unset; border-left: none; border-top: 1px solid var(--card-border); max-height: 50vh; }
+            .pd-productos { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div id="toast" class="toast-msg"></div>
+    <div id="sentOverlay" class="sent-overlay">
+        <div class="big">✅</div>
+        <h2>¡Pedido enviado!</h2>
+        <p>Tu pedido ya está en cocina. Te avisaremos cuando esté listo.</p>
+        <button onclick="cerrarEnviado()">Hacer otro pedido</button>
+    </div>
+
+    <div id="modalPersonalizar" class="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalProdNombre">Producto</h3>
+                <button class="btn-icon" onclick="cerrarModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalPersonalizarBody"></div>
+            <div class="modal-footer">
+                <div class="modal-qty">
+                    <button class="btn-qty" onclick="cambiarCant(-1)">−</button>
+                    <span id="modalCantidad">1</span>
+                    <button class="btn-qty" onclick="cambiarCant(1)">+</button>
+                </div>
+                <button class="btn-primary" onclick="agregarAlCarrito()">Agregar · $<span id="modalPrecioTotal">0.00</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-layout">
+        <!-- Columna izquierda: productos -->
+        <div class="col-productos">
+            <header class="pd-header">
+                <h1>🍔 Cony Rest</h1>
+                <p class="pd-subtitle">Menú digital — Toca un producto para agregarlo a tu pedido</p>
+            </header>
+            <div class="pd-grupos" id="gruposTabs"></div>
+            <div class="pd-categorias" id="categoriasScroll"></div>
+            <div class="pd-scroll">
+                <div class="pd-productos" id="productosGrid"></div>
+            </div>
+        </div>
+
+        <!-- Columna derecha: comandero -->
+        <div class="col-comandero">
+            <div class="cmd-header">
+                <h2>📋 Pedido <span id="cmdCount">(0)</span></h2>
+                <button class="cmd-clear" onclick="limpiarCarrito()">🗑️ Vaciar</button>
+            </div>
+            <div class="cmd-items" id="cmdItems">
+                <div class="cmd-empty">
+                    <div class="icon">🛒</div>
+                    <div>Selecciona productos del menú</div>
+                    <div style="font-size:.78rem;margin-top:6px">Se irán agregando aquí</div>
+                </div>
+            </div>
+            <div class="cmd-footer" id="cmdFooter" style="display:none">
+                <div class="cmd-form">
+                    <div class="cmd-form-row">
+                        <div>
+                            <label>Nombre *</label>
+                            <input type="text" id="clienteNombre" placeholder="Tu nombre" required>
+                        </div>
+                        <div>
+                            <label>Teléfono</label>
+                            <input type="tel" id="clienteTelefono" placeholder="55 1234 5678">
+                        </div>
+                    </div>
+                    <div class="cmd-form-row">
+                        <div>
+                            <label>Método de pago</label>
+                            <select id="metodoPago">
+                                <option value="Efectivo">💵 Efectivo</option>
+                                <option value="Tarjeta">💳 Tarjeta</option>
+                                <option value="Transferencia">🏦 Transferencia</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Notas</label>
+                            <input type="text" id="clienteNotas" placeholder="Alguna observación">
+                        </div>
+                    </div>
+                </div>
+                <div class="cmd-total-row">
+                    <span class="cmd-total-label">Total</span>
+                    <span class="cmd-total-amount" id="cmdTotal">$0.00</span>
+                </div>
+                <button class="cmd-btn-send" id="btnEnviar" onclick="confirmarPedido()">📤 Enviar pedido</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API_BASE = window.location.origin + '/api';
+    let productos = [];
+    let grupos = {};
+    let carrito = [];
+    let currentGrupo = null;
+    let currentCategoria = null;
+    let modalProducto = null;
+    let modalCant = 1;
+    let modalExtrasSeleccion = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await cargarProductos();
+    });
+
+    async function cargarProductos() {
+        try {
+            const res = await fetch(API_BASE + '/menu');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (data.productos && Array.isArray(data.productos)) {
+                productos = data.productos;
+            } else if (Array.isArray(data)) {
+                productos = data;
+            } else {
+                productos = Object.values(data);
+            }
+            if (!productos.length) {
+                document.getElementById('productosGrid').innerHTML = '<p style="padding:40px;text-align:center;color:var(--text-muted)">No hay productos disponibles</p>';
+                return;
+            }
+            // Inferir grupos de la categoría de cada producto
+            grupos = {};
+            productos.forEach(p => {
+                const cat = p.categoria || 'General';
+                if (!grupos[cat]) {
+                    grupos[cat] = { id: cat, descripcion: cat, icono: getIcono(cat), categorias: [] };
+                }
+            });
+            renderGrupos();
+            const keys = Object.keys(grupos);
+            if (keys.length > 0) seleccionarGrupo(keys[0]);
+        } catch (e) {
+            console.error('Error:', e);
+            document.getElementById('productosGrid').innerHTML = '<p style="padding:40px;text-align:center;color:var(--text-muted)">Error al cargar el menú</p>';
+        }
+    }
+
+    function getIcono(nombre) {
+        const map = {
+            'ALITAS': '🍗', 'PAPAS': '🍟', 'BONELESS': '🍗', 'COSTILLA': '🍖',
+            'HAMBURGUESA': '🍔', 'PIZZA': '🍕', 'TACO': '🌮', 'DESAYUNO': '🍳',
+            'BEBIDA': '🥤', 'AGUA': '🍹', 'REFRESCO': '🥤', 'CAFE': '☕',
+            'EXTRAS': '➕', 'POSTRE': '🍰', 'ENSALADA': '🥗', 'COMBO': '🎯',
+        };
+        for (const [k, v] of Object.entries(map)) {
+            if (nombre.toUpperCase().includes(k)) return v;
+        }
+        return '🍽️';
+    }
+    function getProEmoji(nombre) { return getIcono(nombre); }
+
+    function renderGrupos() {
+        const c = document.getElementById('gruposTabs');
+        c.innerHTML = Object.values(grupos).map(g => `<button class="pd-grupo-tab" onclick="seleccionarGrupo('${g.id}')" data-id="${g.id}">${g.icono} ${g.descripcion}</button>`).join('');
+    }
+
+    function seleccionarGrupo(grupoId) {
+        currentGrupo = grupoId;
+        document.querySelectorAll('.pd-grupo-tab').forEach(t => t.classList.toggle('active', t.dataset.id === grupoId));
+        currentCategoria = null;
+        renderProductos();
+    }
+
+    function renderProductos() {
+        const grid = document.getElementById('productosGrid');
+        let filtered = productos;
+        if (currentGrupo) {
+            filtered = filtered.filter(p => (p.categoria || 'General') === currentGrupo);
+        }
+        if (!filtered.length) {
+            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:30px;color:var(--text-muted)">No hay productos aquí</p>';
+            return;
+        }
+        grid.innerHTML = filtered.map(p => `
+            <div class="pd-prod-card" onclick="seleccionarProducto('${p.id}')">
+                <div class="emoji">${getProEmoji(p.nombre)}</div>
+                <div class="name">${p.nombre}</div>
+                <div class="price">$${(p.precio || 0).toFixed(2)}</div>
+            </div>
+        `).join('');
+    }
+
+    function seleccionarProducto(id) {
+        const p = productos.find(x => String(x.id) === String(id));
+        if (!p) return;
+        modalProducto = p;
+        modalCant = 1;
+        modalExtrasSeleccion = [];
+        document.getElementById('modalProdNombre').textContent = p.nombre;
+        document.getElementById('modalCantidad').textContent = 1;
+        document.getElementById('modalPrecioTotal').textContent = (p.precio || 0).toFixed(2);
+
+        const body = document.getElementById('modalPersonalizarBody');
+        let extras = [];
+        if (p.complementos) {
+            try {
+                extras = typeof p.complementos === 'string' ? JSON.parse(p.complementos) : p.complementos;
+            } catch(e) {}
+        }
+        if (extras.length > 0) {
+            body.innerHTML = '<h4 style="margin-bottom:10px;font-size:.85rem;color:var(--text-muted)">Personaliza tu pedido:</h4>' +
+                extras.map((e, i) => `
+                    <div class="extra-opcion" onclick="toggleExtra(${i})" data-idx="${i}">
+                        <span>${e.nombre || e}</span>
+                        ${e.precio ? `<span style="color:var(--primary);font-size:.8rem">+$${Number(e.precio).toFixed(2)}</span>` : '<span style="color:var(--success);font-size:.75rem">sin costo</span>'}
+                    </div>
+                `).join('');
+        } else {
+            body.innerHTML = '<p style="color:var(--text-muted);font-size:.85rem">Sin personalizar — se agrega tal cual</p>';
+        }
+        document.getElementById('modalPersonalizar').classList.add('active');
+    }
+
+    function toggleExtra(idx) {
+        const el = document.querySelector(`.extra-opcion[data-idx="${idx}"]`);
+        if (!el) return;
+        const selected = modalExtrasSeleccion.includes(idx);
+        if (selected) {
+            modalExtrasSeleccion = modalExtrasSeleccion.filter(i => i !== idx);
+            el.classList.remove('selected');
+        } else {
+            modalExtrasSeleccion.push(idx);
+            el.classList.add('selected');
+        }
+    }
+
+    function cambiarCant(delta) {
+        modalCant = Math.max(1, modalCant + delta);
+        document.getElementById('modalCantidad').textContent = modalCant;
+        const total = (modalProducto?.precio || 0) * modalCant;
+        document.getElementById('modalPrecioTotal').textContent = total.toFixed(2);
+    }
+
+    function cerrarModal() {
+        document.getElementById('modalPersonalizar').classList.remove('active');
+    }
+
+    function agregarAlCarrito() {
+        if (!modalProducto) return;
+        let extras = [];
+        let precioExtra = 0;
+        if (modalProducto.complementos) {
+            try {
+                const comp = typeof modalProducto.complementos === 'string' ? JSON.parse(modalProducto.complementos) : modalProducto.complementos;
+                extras = modalExtrasSeleccion.map(i => comp[i]).filter(Boolean);
+                precioExtra = extras.reduce((s, e) => s + Number(e.precio || 0), 0);
+            } catch(e) {}
+        }
+        const item = {
+            id: modalProducto.id,
+            nombre: modalProducto.nombre,
+            precio: Number(modalProducto.precio || 0),
+            cantidad: modalCant,
+            extras: extras.map(e => e.nombre || e),
+            precioExtra: precioExtra,
+            total: (Number(modalProducto.precio || 0) + precioExtra) * modalCant
+        };
+        carrito.push(item);
+        cerrarModal();
+        actualizarComandero();
+        mostrarToast(`✅ ${item.cantidad}x ${item.nombre}`, 'success');
+    }
+
+    function cambiarCantCarrito(idx, delta) {
+        const item = carrito[idx];
+        const nueva = item.cantidad + delta;
+        if (nueva <= 0) {
+            eliminarItem(idx);
+            return;
+        }
+        item.cantidad = nueva;
+        item.total = (item.precio + item.precioExtra) * nueva;
+        actualizarComandero();
+    }
+
+    function eliminarItem(idx) {
+        const item = carrito[idx];
+        carrito.splice(idx, 1);
+        actualizarComandero();
+        mostrarToast(`🗑️ ${item.nombre} eliminado`, 'error');
+    }
+
+    function limpiarCarrito() {
+        if (carrito.length === 0) return;
+        carrito = [];
+        actualizarComandero();
+        mostrarToast('🗑️ Pedido vaciado', 'error');
+    }
+
+    function actualizarComandero() {
+        const container = document.getElementById('cmdItems');
+        const count = carrito.reduce((s, i) => s + i.cantidad, 0);
+        const total = carrito.reduce((s, i) => s + i.total, 0);
+        document.getElementById('cmdCount').textContent = `(${count})`;
+        document.getElementById('cmdTotal').textContent = `$${total.toFixed(2)}`;
+
+        if (carrito.length === 0) {
+            container.innerHTML = `<div class="cmd-empty"><div class="icon">🛒</div><div>Selecciona productos del menú</div><div style="font-size:.78rem;margin-top:6px">Se irán agregando aquí</div></div>`;
+            document.getElementById('cmdFooter').style.display = 'none';
+            return;
+        }
+        document.getElementById('cmdFooter').style.display = 'block';
+        container.innerHTML = carrito.map((item, idx) => `
+            <div class="cmd-item">
+                <div class="cmd-item-top">
+                    <div class="cmd-item-qty">
+                        <button onclick="cambiarCantCarrito(${idx}, -1)">−</button>
+                        <span>${item.cantidad}</span>
+                        <button onclick="cambiarCantCarrito(${idx}, 1)">+</button>
+                    </div>
+                    <div class="cmd-item-name">${item.nombre}</div>
+                    <div class="cmd-item-price">$${item.total.toFixed(2)}</div>
+                    <button class="cmd-item-remove" onclick="eliminarItem(${idx})">✕</button>
+                </div>
+                ${item.extras.length ? `<div class="cmd-item-extras">➕ ${item.extras.join(', ')}</div>` : ''}
+            </div>
+        `).join('');
+        // Scroll al fondo
+        container.scrollTop = container.scrollHeight;
+    }
+
+    async function confirmarPedido() {
+        const nombre = document.getElementById('clienteNombre').value.trim();
+        if (!nombre) {
+            mostrarToast('⚠️ Escribe tu nombre', 'error');
+            document.getElementById('clienteNombre').focus();
+            return;
+        }
+        if (carrito.length === 0) {
+            mostrarToast('⚠️ Agrega productos al pedido', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('btnEnviar');
+        btn.disabled = true;
+        btn.textContent = '⏳ Enviando...';
+
+        const telefono = document.getElementById('clienteTelefono').value.trim();
+        const notas = document.getElementById('clienteNotas').value.trim();
+        const metodo = document.getElementById('metodoPago').value;
+        const total = carrito.reduce((s, i) => s + i.total, 0);
+
+        const items = carrito.map(i => ({
+            id: i.id,
+            nombre: i.nombre,
+            cantidad: i.cantidad,
+            precio: i.precio,
+            extras: i.extras,
+            total: i.total
+        }));
+
+        try {
+            const res = await fetch(API_BASE + '/pedidos/menu', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cliente: nombre,
+                    telefono: telefono,
+                    direccion: 'Menú digital',
+                    metodo_pago: metodo,
+                    notas: notas,
+                    items: items,
+                    total: total,
+                    origen: 'menu_digital'
+                })
+            });
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err);
+            }
+            const result = await res.json();
+            document.getElementById('sentOverlay').classList.add('active');
+            carrito = [];
+            actualizarComandero();
+            document.getElementById('clienteNombre').value = '';
+            document.getElementById('clienteTelefono').value = '';
+            document.getElementById('clienteNotas').value = '';
+
+            // Notificar al webhook para impresión
+            try {
+                await fetch(API_BASE + '/notificar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tipo: 'pedido_nuevo',
+                        pedido_id: result.id || result.pedido_id,
+                        cliente: nombre,
+                        telefono: telefono,
+                        items: items,
+                        total: total
+                    })
+                });
+            } catch(e) { console.log('Notif falló:', e); }
+        } catch (e) {
+            mostrarToast('❌ Error: ' + (e.message || 'desconocido'), 'error');
+            console.error(e);
+        }
+        btn.disabled = false;
+        btn.textContent = '📤 Enviar pedido';
+    }
+
+    function cerrarEnviado() {
+        document.getElementById('sentOverlay').classList.remove('active');
+    }
+
+    function mostrarToast(msg, tipo = '') {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast-msg show ' + (tipo || '');
+        setTimeout(() => t.classList.remove('show'), 3000);
+    }
+    </script>
+</body>
+</html>

@@ -41,6 +41,8 @@
     .tab-pane.active.show { display: block; }
     .main-content { display: none; }
     footer { text-align: center; padding: 1rem; color: #555; font-size: 0.8rem; }
+    .btn-custom { background: #e94560; border: none; color: #fff; font-weight: 600; padding: .7rem 1.5rem; border-radius: 10px; }
+    .btn-custom:hover { background: #d63851; color: #fff; }
   </style>
 </head>
 <body>
@@ -81,8 +83,12 @@
       <li class="nav-item"><button class="nav-link active" onclick="showTab('clientes',this)"><i class="bi bi-people"></i> Clientes</button></li>
       <li class="nav-item"><button class="nav-link" onclick="showTab('cortes',this)"><i class="bi bi-cash-stack"></i> Cortes</button></li>
       <li class="nav-item"><button class="nav-link" onclick="showTab('cancelaciones',this)"><i class="bi bi-x-circle"></i> Cancelaciones</button></li>
-      <li class="nav-item"><button class="nav-link" onclick="showTab('productos',this)"><i class="bi bi-box-seam"></i> Productos</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showTab('reparto',this)"><i class="bi bi-truck"></i> Reparto</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="showTab('repartidores',this)"><i class="bi bi-person-badge"></i> Repartidores</button></li>
+    <li class="nav-item"><button class="nav-link" onclick="showTab('productos',this)"><i class="bi bi-box-seam"></i> Productos</button></li>
     <li class="nav-item"><button class="nav-link" onclick="showTab('estatus',this)"><i class="bi bi-clock-history"></i> Tiempos</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showTab('whatsapp',this)"><i class="bi bi-whatsapp"></i> WhatsApp</button></li>
+      <li class="nav-item"><button class="nav-link" onclick="showTab('impresoras',this)"><i class="bi bi-printer"></i> Impresoras</button></li>
     </ul>
 
     <div class="container-fluid px-3 py-3">
@@ -94,7 +100,7 @@
           <span style="color:#888;font-size:.85rem" id="clientesCount">0 clientes</span>
         </div>
         <div class="card p-3">
-          <div class="mb-2"><input type="text" id="buscarCliente" class="form-control form-control-sm" placeholder="🔍 Buscar por nombre o teléfono..." style="max-width:300px" oninput="filtrarClientes()"></div>
+          <div class="mb-2"><input type="text" id="buscarCliente" class="form-control form-control-sm" placeholder="🔍 Buscar cliente..." style="max-width:300px" oninput="filtrarClientes()"></div>
           <div id="clientesTable">Cargando...</div>
         </div>
         <div class="card p-3 mt-2" id="clienteDetalle" style="display:none">
@@ -103,9 +109,9 @@
             <button class="btn btn-outline-light btn-sm" onclick="cerrarDetalleCliente()">✕ Cerrar</button>
           </div>
           <div class="row g-2 mb-2">
-            <div class="col-md-4"><span style="color:#888">Teléfono:</span> <span id="detalleClienteTel"></span></div>
-            <div class="col-md-4"><span style="color:#888">Dirección:</span> <span id="detalleClienteDir"></span></div>
-            <div class="col-md-4"><span style="color:#888">Total gastado:</span> <span id="detalleClienteTotal"></span></div>
+            <div class="col-md-4"><span style="color:#e94560;font-size:1.2rem;font-weight:700" id="detalleClienteTotal"></span><br><span style="color:#888">Total gastado</span></div>
+            <div class="col-md-4"><span id="detalleClientePedidos" style="font-size:1.2rem"></span><br><span style="color:#888">Pedidos</span></div>
+            <div class="col-md-4"><span id="detalleClienteUltima" style="color:#888;font-size:.85rem"></span><br><span style="color:#888">Última compra</span></div>
           </div>
           <h6 style="color:#888;font-size:.8rem;margin-top:.5rem">📋 Historial de pedidos</h6>
           <div id="detallePedidos">Cargando...</div>
@@ -162,6 +168,79 @@
       </div>
     </div>
 
+    <!-- TAB WHATSAPP -->
+    <div class="tab-pane" id="tab-whatsapp">
+      <h6 style="color:#e94560;margin-bottom:.5rem"><i class="bi bi-whatsapp"></i> Conexión WhatsApp</h6>
+      <div class="card p-3">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label" style="color:#888;font-size:.85rem">Número del negocio (WhatsApp)</label>
+            <input type="text" id="wpNumero" class="form-control" placeholder="Ej: 526792239">
+            <div style="color:#666;font-size:.75rem;margin-top:4px">Sin espacios ni signos. Cód país + número. Ej: 521234567890</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label" style="color:#888;font-size:.85rem">Nombre del negocio</label>
+            <input type="text" id="wpNombreNegocio" class="form-control" placeholder="Ej: CONY">
+          </div>
+        </div>
+        <div style="margin-top:1rem">
+          <button class="btn btn-custom" onclick="guardarWPConfig()">💾 Guardar configuración</button>
+        </div>
+        <div id="wpSaveMsg" style="margin-top:.5rem;display:none"></div>
+        <hr style="border-color:#0f3460">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card" style="background:#0f3460;border:none;padding:1rem;text-align:center">
+              <div style="font-size:2rem" id="wpStatusIcon">❓</div>
+              <div style="font-weight:600;margin-top:.5rem" id="wpStatusText">Verificando...</div>
+              <div style="color:#888;font-size:.85rem;margin-top:.25rem" id="wpStatusDetail"></div>
+            </div>
+          </div>
+          <div class="col-md-6" style="display:flex;flex-direction:column;justify-content:center;align-items:center">
+            <a href="/qr" target="_blank" class="btn btn-custom" style="width:100%;margin-bottom:.5rem">📲 Abrir gestor QR</a>
+            <div style="color:#888;font-size:.8rem">
+              Ahí puedes:<br>
+              • Ver el QR si no está vinculado<br>
+              • Regenerar QR para cambiar de número<br>
+              • Ver estado de la conexión
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <!-- TAB REPARTO -->
+      <div class="tab-pane" id="tab-reparto">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 style="color:#e94560;margin:0"><i class="bi bi-truck"></i> Pedidos en reparto</h6>
+          <span style="color:#888;font-size:.85rem" id="repartoCount">0 asignados</span>
+        </div>
+        <div class="card p-3">
+          <div class="mb-2">
+            <select id="repartoFiltro" class="form-select form-select-sm" style="max-width:250px" onchange="cargarReparto()">
+              <option value="todos">Todos los repartidores</option>
+            </select>
+          </div>
+          <div id="repartoTable">Cargando...</div>
+        </div>
+        <div class="card p-3 mt-2" id="repartoDetalle" style="display:none">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div><h6 style="color:#e94560;margin:0"><i class="bi bi-box-seam"></i> Asignar repartidor</h6></div>
+            <button class="btn btn-outline-light btn-sm" onclick="cerrarRepartoDetalle()">✕ Cerrar</button>
+          </div>
+          <div id="asignarRepartoBody"></div>
+        </div>
+      </div>
+
+      <!-- TAB REPARTIDORES -->
+      <div class="tab-pane" id="tab-repartidores">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 style="color:#e94560;margin:0"><i class="bi bi-person-badge"></i> Repartidores</h6>
+          <button class="btn btn-primary btn-sm" onclick="openRepartidorModal()">+ Nuevo</button>
+        </div>
+        <div class="card p-3"><div id="repartidoresTable">Cargando...</div></div>
+      </div>
+
     <!-- MODAL PRODUCTO ADMIN -->
     <div class="modal fade" id="prodModalAdmin" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
       <div class="modal-header"><h5 class="modal-title" id="prodModalAdminTitle">Nuevo producto</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
@@ -181,6 +260,89 @@
       <div class="modal-footer">
         <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
         <button class="btn btn-danger btn-sm" onclick="saveProdAdmin()">Guardar</button>
+      </div>
+    </div></div></div>
+
+    <!-- MODAL REPARTIDOR -->
+    <div class="modal fade" id="modalRepartidor" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" style="color:#e94560"><i class="bi bi-person-badge"></i> <span id="repartidorModalTitle">Nuevo repartidor</span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="repId">
+        <div class="mb-2"><label class="form-label">Nombre</label><input type="text" id="repNombre" class="form-control"></div>
+        <div class="mb-2"><label class="form-label">Teléfono</label><input type="text" id="repTelefono" class="form-control" maxlength="10"></div>
+        <div class="mb-2"><label class="form-label">Email</label><input type="email" id="repEmail" class="form-control"></div>
+        <div class="mb-2"><label class="form-label">Contraseña</label><input type="password" id="repPassword" class="form-control" placeholder="Dejar vacío para mantener"></div>
+        <div class="mb-2"><label class="form-label">Activo</label>
+          <select id="repActivo" class="form-select">
+            <option value="1">Si</option><option value="0">No</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger btn-sm" onclick="saveRepartidor()">Guardar</button>
+      </div>
+    </div></div></div>
+
+    <!-- TAB IMPRESORAS -->
+    <div class="tab-pane" id="tab-impresoras">
+      <h6 style="color:#e94560;margin-bottom:.5rem"><i class="bi bi-printer"></i> Sistema de Impresión Inteligente</h6>
+
+      <!-- Sección 1: Configuración de Impresoras -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 style="color:#e94560;margin:0"><i class="bi bi-printer"></i> Impresoras</h6>
+          <button class="btn btn-custom btn-sm" onclick="nuevaImpresora()">➕ Nueva impresora</button>
+        </div>
+        <div id="impresorasList">Cargando...</div>
+      </div>
+
+      <!-- Sección 2: Mapeo de Clasificaciones -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 style="color:#e94560;margin:0"><i class="bi bi-diagram-3"></i> Mapeo Clasificación → Impresora</h6>
+        </div>
+        <div id="mapeoList">Cargando...</div>
+      </div>
+
+      <!-- Sección 3: Clientes de Confianza -->
+      <div class="card p-3 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 style="color:#e94560;margin:0"><i class="bi bi-star"></i> Clientes de Confianza</h6>
+        </div>
+        <div id="confianzaList">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- MODAL IMPRESORA -->
+    <div class="modal fade" id="modalImpresora" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title" style="color:#e94560"><i class="bi bi-printer"></i> <span id="impresoraModalTitle">Nueva impresora</span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="impId">
+        <div class="mb-2"><label class="form-label">Nombre</label><input type="text" id="impNombre" class="form-control" placeholder="Impresora cocina 1"></div>
+        <div class="mb-2"><label class="form-label">Rol</label>
+          <select id="impRol" class="form-select">
+            <option value="caja">Caja</option>
+            <option value="cocina">Cocina</option>
+            <option value="barra">Barra</option>
+          </select>
+        </div>
+        <div class="mb-2"><label class="form-label">Dirección IP</label><input type="text" id="impIp" class="form-control" placeholder="192.168.1.100"></div>
+        <div class="mb-2"><label class="form-label">Puerto</label><input type="number" id="impPuerto" class="form-control" value="9100"></div>
+        <div class="mb-2"><label class="form-label">Tamaño papel</label>
+          <select id="impTamano" class="form-select">
+            <option value="80mm">80mm</option>
+            <option value="58mm">58mm</option>
+          </select>
+        </div>
+        <div class="mb-2 form-check">
+          <input type="checkbox" id="impActiva" class="form-check-input" checked>
+          <label class="form-check-label">Activa</label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger btn-sm" onclick="saveImpresora()">Guardar</button>
       </div>
     </div></div></div>
 
@@ -304,19 +466,18 @@
     
     function renderClientes(list){
       if(!list.length){ document.getElementById('clientesTable').innerHTML = '<div class="text-muted">Sin clientes registrados</div>'; return; }
-      let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th></th><th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>Pedidos</th><th>Total</th><th></th></tr></thead><tbody>';
+      let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th></th><th>Nombre</th><th>Pedidos</th><th>Total gastado</th><th>Última compra</th><th></th></tr></thead><tbody>';
       list.forEach(c => {
         const inicial = (c.nombre||'?')[0].toUpperCase();
+        const ultima = c.ultima_compra ? new Date(c.ultima_compra+'Z').toLocaleString('es-MX', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) : '-';
         h += `<tr>
           <td><div class="cliente-avatar">${inicial}</div></td>
           <td><strong>${esc(c.nombre||'-')}</strong></td>
-          <td>${c.telefono||'-'}</td>
-          <td style="font-size:.8rem;color:#999">${esc(c.direccion||'Mostrador')}</td>
-          <td>${c.total_pedidos||0}</td>
+          <td><span class="badge" style="background:#0f3460">${c.total_pedidos||0}</span></td>
           <td><strong>${formatMoney(c.total_gastado)}</strong></td>
+          <td style="font-size:.75rem;color:#999">${ultima}</td>
           <td>
             <button class="btn btn-primary btn-sm" onclick="verCliente(${c.id})">Ver</button>
-            <button class="btn btn-outline-light btn-sm" onclick="editarClienteAdmin(${c.id},'${esc(c.nombre||'')}','${c.telefono||''}','${esc(c.direccion||'')}')">✏️</button>
           </td>
         </tr>`;
       });
@@ -335,11 +496,12 @@
       const c = todosClientes.find(x => x.id === id);
       if(!c) return;
       document.getElementById('detalleClienteNombre').textContent = c.nombre||'Sin nombre';
-      document.getElementById('detalleClienteTel').textContent = c.telefono||'-';
-      document.getElementById('detalleClienteDir').textContent = c.direccion||'Mostrador';
       document.getElementById('detalleClienteTotal').textContent = formatMoney(c.total_gastado);
+      document.getElementById('detalleClientePedidos').textContent = c.total_pedidos || 0;
+      document.getElementById('detalleClienteUltima').textContent = c.ultima_compra ? new Date(c.ultima_compra+'Z').toLocaleString('es-MX') : '-';
       document.getElementById('clienteDetalle').style.display = 'block';
-      api('/api/admin/pedidos-cliente/'+id).then(pedidos => {
+      // Cliente nombre puede tener espacios, encode para URL
+      api('/api/admin/pedidos-cliente/'+encodeURIComponent(c.nombre)).then(pedidos => {
         if(!pedidos.length){ document.getElementById('detallePedidos').innerHTML = '<div class="text-muted">Sin pedidos</div>'; return; }
         let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Total</th><th>Método pago</th><th>Estado</th><th>Fecha</th><th>Productos</th></tr></thead><tbody>';
         pedidos.forEach(p => {
@@ -426,11 +588,11 @@
           document.getElementById('detalleCorteBody').innerHTML = h;
           return;
         }
-        h += '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Método pago</th><th>Estado</th><th>Fecha/Hora</th><th></th></tr></thead><tbody>';
+        h += '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Método pago</th><th>Estado</th><th>Fecha/Hora</th><th>Registró</th><th></th></tr></thead><tbody>';
         pedidos.forEach(p => {
           let badge = p.estado===1?'badge-pendiente':p.estado===2?'badge-completado':p.estado===3?'badge-preparacion':p.estado===4?'badge-warning':'badge-cancelado';
           let estatus = {1:'Pendiente',2:'Completado',3:'En prep.',0:'Cancelado',4:'Pend.Autorizar'}[p.estado]||'Pendiente';
-          h += `<tr><td style="font-size:.8rem">${p.folio||'-'}</td><td>${esc(p.cliente_nombre||'Mostrador')}</td><td>${formatMoney(p.total)}</td><td>${esc(p.metodo_pago||'-')}</td><td><span class="badge ${badge}">${estatus}</span></td><td style="font-size:.75rem">${p.fecha?new Date(p.fecha).toLocaleString('es-MX'):'-'}</td>
+          h += `<tr><td style="font-size:.8rem">${p.folio||'-'}</td><td>${esc(p.cliente_nombre||'Mostrador')}</td><td>${formatMoney(p.total)}</td><td>${esc(p.metodo_pago||'-')}</td><td><span class="badge ${badge}">${estatus}</span></td><td style="font-size:.75rem">${p.fecha?new Date(p.fecha).toLocaleString('es-MX'):'-'}</td><td style="font-size:.75rem">${p.creado_por_nombre||'-'}</td>
             <td>
               <button class="btn btn-outline-info btn-sm" onclick="verDetallePedido(${p.id})">Ver</button>
               <button class="btn btn-outline-light btn-sm" onclick="reimprimirTicket(${p.id})" title="Reimprimir ticket">🖨️</button>
@@ -573,11 +735,11 @@
         let filtrados = pedidos;
         if(q) filtrados = pedidos.filter(p => (p.folio||'').toLowerCase().includes(q) || (p.cliente_nombre||'').toLowerCase().includes(q) || (p.telefono||'').includes(q));
         if(!filtrados.length){ document.getElementById('estatusLogBody').innerHTML = '<div class="text-muted">Sin resultados</div>'; return; }
-        let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Método</th><th>Estatus</th><th>Creado</th><th></th></tr></thead><tbody>';
+        let h = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Folio</th><th>Cliente</th><th>Total</th><th>Método</th><th>Estatus</th><th>Creado</th><th>Registró</th><th></th></tr></thead><tbody>';
         const estados = {1:'Pendiente',2:'Completado',3:'En prep.',0:'Cancelado'};
         const badges = {1:'badge-pendiente',2:'badge-completado',3:'badge-preparacion',0:'badge-cancelado'};
         filtrados.slice(0,50).forEach(p => {
-          h += `<tr><td style="font-size:.8rem">${p.folio||'-'}</td><td>${esc(p.cliente_nombre||'Mostrador')}</td><td>${formatMoney(p.total)}</td><td>${esc(p.metodo_pago||'-')}</td><td><span class="badge ${badges[p.estado]||'bg-secondary'}">${estados[p.estado]||'?'}</span></td><td style="font-size:.75rem">${p.fecha?new Date(p.fecha).toLocaleString('es-MX'):'-'}</td><td><button class="btn btn-primary btn-sm" onclick="verTimeline('${p.folio}',${p.id})">⏱ Ver tiempos</button></td></tr>`;
+          h += `<tr><td style="font-size:.8rem">${p.folio||'-'}</td><td>${esc(p.cliente_nombre||'Mostrador')}</td><td>${formatMoney(p.total)}</td><td>${esc(p.metodo_pago||'-')}</td><td><span class="badge ${badges[p.estado]||'bg-secondary'}">${estados[p.estado]||'?'}</span></td><td style="font-size:.75rem">${p.fecha?new Date(p.fecha).toLocaleString('es-MX'):'-'}</td><td style="font-size:.75rem">${p.creado_por_nombre||'-'}</td><td><button class="btn btn-primary btn-sm" onclick="verTimeline('${p.folio}',${p.id})">⏱ Ver tiempos</button></td></tr>`;
         });
         h += '</tbody></table></div>';
         h += '<div style="color:#888;font-size:.8rem;margin-top:.5rem">Mostrando hasta 50 pedidos recientes</div>';
@@ -710,7 +872,404 @@
       if(name==='productos') cargarProductosAdmin();
       if(name==='estatus') cargarEstatusLog();
       if(name==='cancelaciones') cargarCancelaciones();
+      if(name==='reparto') cargarReparto();
+      if(name==='repartidores') cargarRepartidores();
+      if(name==='whatsapp') cargarWPConfig();
+      if(name==='impresoras') cargarImpresoras();
     }
+
+    // ========== REPARTO ==========
+    // Muestra todos los pedidos con repartidor asignado en el corte actual
+
+    function cargarReparto() {
+      api('/api/pedidos').then(pedidos => {
+        if (!pedidos || !Array.isArray(pedidos)) pedidos = [];
+        // Filtrar pedidos que tienen repartidor asignado
+        var conRepartidor = pedidos.filter(function(p) { return p.repartidor_id; });
+        document.getElementById('repartoCount').textContent = conRepartidor.length + ' asignado(s)';
+
+        var filtroSelect = document.getElementById('repartoFiltro');
+        var filtro = filtroSelect ? filtroSelect.value : 'todos';
+
+        // Cargar repartidores para filtro y asignación
+        api('/api/repartidores').then(function(reps) {
+          if (!reps || !Array.isArray(reps)) reps = [];
+          if (filtroSelect) {
+            filtroSelect.innerHTML = '<option value="todos">Todos los repartidores</option>';
+            reps.forEach(function(r) {
+              filtroSelect.innerHTML += '<option value="'+r.id+'">'+esc(r.nombre)+'</option>';
+            });
+            filtroSelect.value = filtro;
+          }
+          var filtrados = filtro === 'todos' ? conRepartidor : conRepartidor.filter(function(p) { return String(p.repartidor_id) === filtro; });
+          renderRepartoTable(filtrados, reps);
+        }).catch(function() {
+          renderRepartoTable(conRepartidor, []);
+        });
+      }).catch(function(e) {
+        var el = document.getElementById('repartoTable');
+        if (el) el.innerHTML = '<div class="text-danger">Sin corte abierto o error: '+(e.message||e)+'</div>';
+      });
+    }
+
+    function renderRepartoFilter(reps, selectedVal) {
+      const select = document.getElementById('repartoFiltro');
+      select.innerHTML = '<option value="todos">Todos los repartidores</option>';
+      reps.forEach(r => {
+        select.innerHTML += '<option value="'+r.id+'">'+esc(r.nombre)+'</option>';
+      });
+      select.value = selectedVal;
+    }
+
+    function renderRepartoTable(pedidos, repartidores) {
+      const container = document.getElementById('repartoTable');
+      if (!pedidos.length) {
+        container.innerHTML = '<div style="text-align:center;padding:40px;color:#666">No hay pedidos con repartidor asignado en este corte</div>';
+        return;
+      }
+
+      let html = '<div class="table-responsive"><table class="table table-hover"><thead><tr>' +
+        '<th>Folio</th><th>Cliente</th><th>Dirección</th><th>Total</th><th>Repartidor</th><th>Estatus</th><th>Registró</th><th>Acción</th>' +
+        '</tr></thead><tbody>';
+
+      pedidos.forEach(p => {
+        const rep = repartidores.find(r => r.id === p.repartidor_id);
+        const repNombre = rep ? rep.nombre : 'Desconocido';
+        const estatusMap = {'0':'Cancelado','1':'Pendiente','2':'Completado(En Reparto)','3':'Preparación','4':'Autorización','5':'Entregado'};
+        const estatusTexto = estatusMap[p.estado] || 'Estatus '+p.estado;
+        const estatusColor = p.entregado_por ? '#2ecc71' : '#3498db';
+
+        html += '<tr>' +
+          '<td><strong>#' + esc(p.folio||p.id) + '</strong></td>' +
+          '<td>' + esc(p.cliente_nombre||'N/A') + '<br><small style="color:#888">' + esc(p.telefono||'') + '</small></td>' +
+          '<td><small>' + esc((p.nota||'').substring(0,60)) + '</small></td>' +
+          '<td>$' + (p.total||0).toFixed(2) + '</td>' +
+          '<td>' + esc(repNombre) + '</td>' +
+          '<td><span style="color:'+estatusColor+'">' + estatusTexto + '</span></td>' +
+          '<td><small>' + esc(p.creado_por_nombre||'-') + '</small></td>' +
+          '<td>' +
+            '<select class="form-select form-select-sm" onchange="reasignarRepartidor('+p.id+',this.value)" style="min-width:130px">' +
+              '<option value="">Reasignar...</option>' +
+              repartidores.map(r => '<option value="'+r.id+'" '+(r.id===p.repartidor_id?'selected':'')+'>'+esc(r.nombre)+'</option>').join('') +
+            '</select>' +
+          '</td>' +
+        '</tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    }
+
+    function reasignarRepartidor(pedidoId, repartidorId) {
+      if (!repartidorId) return;
+      if (!confirm('¿Reasignar este pedido al repartidor?')) return;
+      api('/api/pedidos/'+pedidoId+'/asignar-repartidor', {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({repartidor_id: parseInt(repartidorId)})
+      }).then(() => cargarReparto())
+      .catch(e => alert('Error: '+(e.message||e)));
+    }
+
+    // ========== REPARTIDORES ==========
+    // Lista de repartidores activos + sus entregas activas al seleccionarlos
+
+    var repartidoresCache = [];
+
+    function cargarRepartidores() {
+      api('/api/repartidores').then(reps => {
+        repartidoresCache = reps;
+        const container = document.getElementById('repartidoresTable');
+        if (!reps.length) {
+          container.innerHTML = '<div style="text-align:center;padding:40px;color:#666">No hay repartidores registrados</div>';
+          return;
+        }
+        let html = '<div class="mb-2">Selecciona un repartidor para ver sus entregas activas:</div>';
+        html += '<div class="list-group mb-3">';
+        reps.forEach(r => {
+          html += '<a href="#" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" ' +
+            'style="background:#0f3460;color:#fff;border:1px solid #1a1a4e;margin-bottom:2px" ' +
+            'onclick="verEntregasRepartidor('+r.id+',this)">' +
+            '<span><strong>🛵 ' + esc(r.nombre) + '</strong><br><small style="color:#888">' + esc(r.telefono||'') + '</small></span>' +
+            '<span class="badge bg-info rounded-pill">' + (r.pedidos_asignados||0) + ' activos</span>' +
+          '</a>';
+        });
+        html += '</div>';
+        html += '<div id="entregasRepartidorDetalle"></div>';
+        container.innerHTML = html;
+      }).catch(e => {
+        document.getElementById('repartidoresTable').innerHTML = '<div class="text-danger">Error: '+e.message+'</div>';
+      });
+    }
+
+    function verEntregasRepartidor(rid, el) {
+      // Resaltar selección
+      document.querySelectorAll('.list-group-item').forEach(i => i.style.borderLeft = '3px solid transparent');
+      el.style.borderLeft = '3px solid #e94560';
+
+      api('/api/repartidor/'+rid+'/pedidos').then(pedidos => {
+        const container = document.getElementById('entregasRepartidorDetalle');
+        if (!pedidos.length) {
+          container.innerHTML = '<div style="color:#888;padding:20px;text-align:center">Este repartidor no tiene entregas activas</div>';
+          return;
+        }
+        let html = '<h6 style="color:#e94560;margin-bottom:10px"><i class="bi bi-truck"></i> Entregas activas ('+pedidos.length+')</h6>';
+        html += '<div class="table-responsive"><table class="table table-hover"><thead><tr>' +
+          '<th>Folio</th><th>Cliente</th><th>Dirección</th><th>Total</th><th>Estatus</th><th>Desde</th><th>Registró</th>' +
+          '</tr></thead><tbody>';
+        pedidos.forEach(p => {
+          const estatusTexto = p.entregado_por ? 'Entregado' : (p.estado >= 2 ? 'En ruta' : 'Listo');
+          html += '<tr>' +
+            '<td><strong>#' + esc(p.folio||p.id) + '</strong></td>' +
+            '<td>' + esc(p.cliente_nombre||'N/A') + '</td>' +
+            '<td><small>' + esc((p.direccion||'').substring(0,50)) + '</small></td>' +
+            '<td>$' + (p.total||0).toFixed(2) + '</td>' +
+            '<td><span style="color:'+(p.entregado_por?'#2ecc71':'#3498db')+'">' + estatusTexto + '</span></td>' +
+            '<td><small>' + (p.fecha ? new Date(p.fecha).toLocaleString('es-MX') : '-') + '</small></td>' +
+            '<td><small>' + esc(p.creado_por_nombre||'-') + '</small></td>' +
+          '</tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+      }).catch(e => {
+        document.getElementById('entregasRepartidorDetalle').innerHTML = '<div class="text-danger">Error: '+e.message+'</div>';
+      });
+    }
+      // ========== WHATSAPP ==========
+    function cargarWPConfig(){
+      api('/api/config/wp').then(cfg => {
+        if(!cfg || cfg.detail){ throw new Error('Sin conexión'); }
+        document.getElementById('wpNumero').value = cfg.numero || '';
+        document.getElementById('wpNombreNegocio').value = cfg.nombre_negocio || '';
+        const icono = document.getElementById('wpStatusIcon');
+        const txt = document.getElementById('wpStatusText');
+        const det = document.getElementById('wpStatusDetail');
+        if(cfg.conectado){
+          icono.textContent = '✅';
+          txt.textContent = 'WhatsApp conectado';
+          txt.style.color = '#2ecc71';
+          det.textContent = 'El bot está activo y recibiendo mensajes';
+        } else {
+          icono.textContent = '🔴';
+          txt.textContent = 'WhatsApp desconectado';
+          txt.style.color = '#e94560';
+          det.textContent = 'Abre el gestor QR para vincular';
+        }
+      }).catch(() => {
+        document.getElementById('wpStatusIcon').textContent = '❌';
+        document.getElementById('wpStatusText').textContent = 'Error de conexión';
+      });
+    }
+
+    function guardarWPConfig(){
+      const numero = document.getElementById('wpNumero').value.trim();
+      const nombre = document.getElementById('wpNombreNegocio').value.trim();
+      if(!numero){ mostrarMsg('wpSaveMsg','⚠️ El número es obligatorio','#e94560'); return; }
+      api('/api/config/wp', { method:'PUT', body:JSON.stringify({numero, nombre_negocio:nombre}), headers:{'Content-Type':'application/json'} })
+        .then(r => {
+          mostrarMsg('wpSaveMsg','✅ Configuración guardada','#2ecc71');
+        })
+        .catch(e => mostrarMsg('wpSaveMsg','❌ Error: '+e.message,'#e94560'));
+    }
+
+    function mostrarMsg(id, texto, color){
+      const el = document.getElementById(id);
+      el.textContent = texto;
+      el.style.color = color || '#fff';
+      el.style.display = 'block';
+      setTimeout(() => el.style.display = 'none', 4000);
+    }
+
+    // ========== IMPRESORAS ==========
+    var impresorasCache = [];
+
+    function cargarImpresoras(){
+      cargarImpresorasConfig();
+      cargarMapeoClasificaciones();
+      cargarClientesConfianza();
+    }
+
+    function cargarImpresorasConfig(){
+      api('/api/impresoras-config').then(imps => {
+        impresorasCache = imps;
+        const container = document.getElementById('impresorasList');
+        if(!imps.length){
+          container.innerHTML = '<div style="text-align:center;padding:30px;color:#666"><i class="bi bi-printer" style="font-size:2rem;display:block;margin-bottom:10px"></i>No hay impresoras configuradas</div>';
+          return;
+        }
+        var html = '<div class="table-responsive"><table class="table table-hover"><thead><tr>' +
+          '<th>Nombre</th><th>Rol</th><th>IP</th><th>Puerto</th><th>Papel</th><th>Estado</th><th>Acción</th></tr></thead><tbody>';
+        imps.forEach(imp => {
+          var activaLabel = imp.activa ? '<span style="color:#2ecc71">✅ Activa</span>' : '<span style="color:#e94560">❌ Inactiva</span>';
+          var rolLabel = {'caja':'🧾 Caja','cocina':'🍳 Cocina','barra':'🍸 Barra'};
+          html += '<tr>' +
+            '<td><strong>' + esc(imp.nombre) + '</strong></td>' +
+            '<td>' + (rolLabel[imp.rol] || imp.rol) + '</td>' +
+            '<td><code>' + esc(imp.ip) + '</code></td>' +
+            '<td>' + imp.puerto + '</td>' +
+            '<td>' + esc(imp.tamano_papel) + '</td>' +
+            '<td>' + activaLabel + '</td>' +
+            '<td>' +
+              '<button class="btn btn-primary btn-sm" onclick="editarImpresora('+imp.id+')" title="Editar">✏️</button> ' +
+              '<button class="btn btn-info btn-sm" onclick="probarImpresora('+imp.id+')" title="Probar impresión">🖨️</button> ' +
+              '<button class="btn btn-danger btn-sm" onclick="eliminarImpresora('+imp.id+')" title="Eliminar">🗑️</button>' +
+            '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+      }).catch(e => {
+        document.getElementById('impresorasList').innerHTML = '<div class="text-danger">Error: '+(e.message||e)+'</div>';
+      });
+    }
+
+    function nuevaImpresora(){
+      document.getElementById('impId').value = '';
+      document.getElementById('impresoraModalTitle').textContent = 'Nueva impresora';
+      document.getElementById('impNombre').value = '';
+      document.getElementById('impRol').value = 'cocina';
+      document.getElementById('impIp').value = '';
+      document.getElementById('impPuerto').value = '9100';
+      document.getElementById('impTamano').value = '80mm';
+      document.getElementById('impActiva').checked = true;
+      new bootstrap.Modal(document.getElementById('modalImpresora')).show();
+    }
+
+    function editarImpresora(id){
+      var imp = impresorasCache.find(i => i.id === id);
+      if(!imp) return;
+      document.getElementById('impId').value = imp.id;
+      document.getElementById('impresoraModalTitle').textContent = 'Editar impresora';
+      document.getElementById('impNombre').value = imp.nombre;
+      document.getElementById('impRol').value = imp.rol;
+      document.getElementById('impIp').value = imp.ip;
+      document.getElementById('impPuerto').value = imp.puerto;
+      document.getElementById('impTamano').value = imp.tamano_papel || '80mm';
+      document.getElementById('impActiva').checked = imp.activa === 1;
+      new bootstrap.Modal(document.getElementById('modalImpresora')).show();
+    }
+
+    function saveImpresora(){
+      var id = document.getElementById('impId').value;
+      var data = {
+        nombre: document.getElementById('impNombre').value.trim(),
+        rol: document.getElementById('impRol').value,
+        ip: document.getElementById('impIp').value.trim(),
+        puerto: parseInt(document.getElementById('impPuerto').value) || 9100,
+        tamano_papel: document.getElementById('impTamano').value,
+        activa: document.getElementById('impActiva').checked ? 1 : 0
+      };
+      if(!data.nombre){ alert('El nombre es obligatorio'); return; }
+      if(!data.ip){ alert('La dirección IP es obligatoria'); return; }
+      var method = id ? 'PUT' : 'POST';
+      var url = id ? '/api/impresoras-config/'+id : '/api/impresoras-config';
+      api(url, {method: method, body: JSON.stringify(data), headers: {'Content-Type':'application/json'}})
+        .then(r => {
+          bootstrap.Modal.getInstance(document.getElementById('modalImpresora')).hide();
+          cargarImpresorasConfig();
+        })
+        .catch(e => alert('Error: '+(e.message||e)));
+    }
+
+    function eliminarImpresora(id){
+      if(!confirm('¿Eliminar esta impresora?')) return;
+      api('/api/impresoras-config/'+id, {method:'DELETE'})
+        .then(() => cargarImpresorasConfig())
+        .catch(e => alert('Error: '+(e.message||e)));
+    }
+
+    function probarImpresora(id){
+      api('/api/impresoras-config/'+id+'/probar', {method:'POST'})
+        .then(r => {
+          alert('✅ ' + r.mensaje);
+        })
+        .catch(e => alert('❌ Error: '+(e.message||e)));
+    }
+
+    function cargarMapeoClasificaciones(){
+      api('/api/rol-impresora-mapeo').then(mapeos => {
+        api('/api/clasificaciones-superiores').then(clases => {
+          const container = document.getElementById('mapeoList');
+          if(!mapeos.length && !clases.length){
+            container.innerHTML = '<div style="color:#666">No hay clasificaciones configuradas</div>';
+            return;
+          }
+          var html = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Clasificación</th><th>Imprime en</th></tr></thead><tbody>';
+          var mapeados = {};
+          mapeos.forEach(m => { mapeados[m.clasificacion_superior_id] = m; });
+          clases.forEach(c => {
+            var m = mapeados[c.id];
+            var rolActual = m ? m.rol_impresora : 'cocina';
+            var mapeoId = m ? m.id : '';
+            var rolLabel = {'caja':'🧾 Caja','cocina':'🍳 Cocina','barra':'🍸 Barra'};
+            html += '<tr>' +
+              '<td><strong>' + esc(c.nombre) + '</strong></td>' +
+              '<td>' +
+                '<select class="form-select form-select-sm" style="width:auto;display:inline-block" onchange="actualizarRolMapeo('+c.id+',this.value)">' +
+                  '<option value="cocina" '+(rolActual==='cocina'?'selected':'')+'>🍳 Cocina</option>' +
+                  '<option value="barra" '+(rolActual==='barra'?'selected':'')+'>🍸 Barra</option>' +
+                  '<option value="caja" '+(rolActual==='caja'?'selected':'')+'>🧾 Caja</option>' +
+                '</select>' +
+              '</td></tr>';
+          });
+          html += '</tbody></table></div>';
+          html += '<div style="color:#666;font-size:.85rem"><i class="bi bi-info-circle"></i> Al crear un pedido, los productos se imprimen según su clasificación superior</div>';
+          container.innerHTML = html;
+        });
+      }).catch(e => {
+        document.getElementById('mapeoList').innerHTML = '<div class="text-danger">Error: '+(e.message||e)+'</div>';
+      });
+    }
+
+    function actualizarRolMapeo(clasificacionSuperiorId, rol){
+      // Buscar el mapeo existente o crearlo via PUT
+      api('/api/rol-impresora-mapeo').then(mapeos => {
+        var m = mapeos.find(x => x.clasificacion_superior_id === clasificacionSuperiorId);
+        if(m){
+          api('/api/rol-impresora-mapeo/'+m.id, {method:'PUT', body: JSON.stringify({rol_impresora:rol}), headers:{'Content-Type':'application/json'}})
+            .then(() => { cargarMapeoClasificaciones(); })
+            .catch(e => alert('Error: '+(e.message||e)));
+        }
+      });
+    }
+
+    function cargarClientesConfianza(){
+      api('/api/clientes-lista').then(clientes => {
+        const container = document.getElementById('confianzaList');
+        if(!clientes.length){
+          container.innerHTML = '<div style="text-align:center;padding:20px;color:#666">No hay clientes registrados en pedidos</div>';
+          return;
+        }
+        var html = '<div class="table-responsive"><table class="table table-hover"><thead><tr>' +
+          '<th>Cliente</th><th>Nivel de Confianza</th><th>Acción</th></tr></thead><tbody>';
+        clientes.forEach(c => {
+          var nivel = c.nivel_confianza || 0;
+          var nivelLabel = nivel === 2 ? '⭐ VIP' : (nivel === 1 ? '✅ Confianza' : '⬜ Normal');
+          var nivelColor = nivel === 2 ? '#f1c40f' : (nivel === 1 ? '#2ecc71' : '#888');
+          html += '<tr>' +
+            '<td><strong>' + esc(c.nombre) + '</strong></td>' +
+            '<td><span style="color:'+nivelColor+';font-weight:600">' + nivelLabel + '</span></td>' +
+            '<td>' +
+              '<button class="btn btn-sm '+(nivel===0?'btn-outline-light':'btn-outline-secondary')+'" onclick="setConfianza(\''+esc(c.nombre)+'\',0)">⬜ Normal</button> ' +
+              '<button class="btn btn-sm '+(nivel===1?'btn-success':'btn-outline-secondary')+'" onclick="setConfianza(\''+esc(c.nombre)+'\',1)">✅ Confianza</button> ' +
+              '<button class="btn btn-sm '+(nivel===2?'btn-warning':'btn-outline-secondary')+'" onclick="setConfianza(\''+esc(c.nombre)+'\',2)">⭐ VIP</button>' +
+            '</td></tr>';
+        });
+        html += '</tbody></table></div>';
+        container.innerHTML = html;
+      }).catch(e => {
+        document.getElementById('confianzaList').innerHTML = '<div class="text-danger">Error: '+(e.message||e)+'</div>';
+      });
+    }
+
+    function setConfianza(cliente, nivel){
+      var nivelLabels = {0:'Normal',1:'Confianza',2:'VIP'};
+      if(!confirm('¿Cambiar nivel de "'+cliente+'" a '+nivelLabels[nivel]+'?')) return;
+      api('/api/clientes-confianza', {method:'PUT', body:JSON.stringify({cliente:cliente, nivel:nivel}), headers:{'Content-Type':'application/json'}})
+        .then(r => {
+          cargarClientesConfianza();
+        })
+        .catch(e => alert('Error: '+(e.message||e)));
+    }
+
   </script>
 </body>
 </html>

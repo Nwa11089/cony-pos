@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery - Nexo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root { --bg: #0b0d10; --surface: #14171a; --card: #1c1f23; --border: #2d3136; --primary: #e94560; --primary-dim: rgba(233,69,96,.15); --text: #e9eaec; --muted: #6b7280; --success: #2ecc71; --warning: #f39c12; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* Login screen */
+        #screenLogin { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        #screenLogin.hidden { display: none; }
+
+        .login-box { max-width: 440px; width: 100%; }
+        .login-header { text-align: center; margin-bottom: 32px; }
+        .login-header .logo { font-size: 2.5rem; margin-bottom: 8px; }
+        .login-header h1 { font-size: 1.6rem; font-weight: 800; }
+        .login-header h1 span { color: var(--primary); }
+        .login-header p { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+
+        .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 28px; }
+        .login-card label { display: block; color: var(--muted); font-size: .82rem; margin-bottom: 4px; }
+        .login-card input { width: 100%; padding: 12px 14px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: .92rem; margin-bottom: 14px; }
+        .login-card input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-dim); }
+        .login-card .btn-login { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 10px; font-weight: 700; font-size: .95rem; cursor: pointer; transition: .2s; }
+        .login-card .btn-login:hover { opacity: .9; transform: scale(1.01); }
+        .login-card .btn-login:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+        .login-error { color: var(--primary); font-size: .82rem; text-align: center; margin-top: 10px; display: none; }
+        .login-error.show { display: block; }
+
+        /* Dashboard */
+        #screenDashboard { display: none; }
+        #screenDashboard.active { display: block; }
+
+        .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+        .topbar h2 { font-size: 1.2rem; font-weight: 700; }
+        .topbar h2 span { color: var(--primary); }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .topbar .pos-badge { background: var(--card); padding: 6px 14px; border-radius: 8px; font-size: .82rem; color: var(--muted); border: 1px solid var(--border); }
+        .topbar .pos-badge strong { color: var(--text); }
+        .topbar .btn-logout { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: .82rem; }
+        .topbar .btn-logout:hover { color: var(--primary); border-color: var(--primary); }
+
+        .dash-content { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        /* Stats row */
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+        .stat-card .stat-label { color: var(--muted); font-size: .78rem; }
+        .stat-card .stat-value { font-size: 1.6rem; font-weight: 800; margin-top: 4px; }
+        .stat-card .stat-sub { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+
+        /* Servicios delivery toggle */
+        .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 32px; }
+        .service-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: .2s; }
+        .service-card:hover { border-color: var(--primary); }
+        .service-card.active { border-color: var(--success); background: rgba(46,204,113,.05); }
+        .service-card .s-icon { font-size: 2rem; }
+        .service-card .s-info { flex: 1; }
+        .service-card .s-info .s-name { font-weight: 600; font-size: .9rem; }
+        .service-card .s-info .s-status { font-size: .78rem; }
+        .service-card .s-info .s-status.on { color: var(--success); }
+        .service-card .s-info .s-status.off { color: var(--muted); }
+        .service-card .s-toggle { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--muted); display: flex; align-items: center; justify-content: center; font-size: .7rem; }
+        .service-card.active .s-toggle { background: var(--success); border-color: var(--success); }
+
+        /* Webhook URLs */
+        .webhook-section { margin-bottom: 32px; }
+        .webhook-row { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .webhook-row .wh-name { font-size: .85rem; font-weight: 600; min-width: 100px; }
+        .webhook-row .wh-url { font-size: .82rem; color: var(--muted); font-family: monospace; flex: 1; margin: 0 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .webhook-row .wh-url .active { color: var(--success); }
+        .webhook-row .wh-url .inactive { color: var(--muted); }
+        .webhook-row .btn-copy { background: var(--card); border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: .78rem; }
+        .webhook-row .btn-copy:hover { border-color: var(--primary); color: var(--text); }
+
+        /* Pedidos delivery */
+        .orders-list { margin-top: 16px; }
+        .order-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; }
+        .order-card .o-plat { font-size: 1.5rem; }
+        .order-card .o-info { flex: 1; }
+        .order-card .o-info .o-id { font-weight: 600; font-size: .85rem; }
+        .order-card .o-info .o-items { color: var(--muted); font-size: .8rem; }
+        .order-card .o-total { font-weight: 700; font-size: 1rem; color: var(--primary); }
+        .order-card .o-time { color: var(--muted); font-size: .78rem; text-align: right; }
+
+        .no-orders { text-align: center; padding: 40px; color: var(--muted); }
+        .no-orders .icon { font-size: 3rem; margin-bottom: 10px; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top:0;left:0;right:0;bottom:0; background: rgba(0,0,0,.7); align-items: center; justify-content: center; z-index: 999; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: var(--surface); border-radius: 16px; padding: 24px; max-width: 480px; width: 90%; }
+        .modal-box h3 { margin-bottom: 12px; }
+        .modal-box p { color: var(--muted); font-size: .85rem; margin-bottom: 16px; }
+
+        .badge-rappi { background: #ff5722; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: .72rem; font-weight: 700; }
+        .badge-ubereats { background: #5fb709; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: .72rem; font-weight: 700; }
+        .badge-didi { background: #ffd100; color: #000; padding: 2px 10px; border-radius: 4px; font-size: .72rem; font-weight: 700; }
+
+        @media (max-width: 700px) {
+            .dash-content { padding: 16px; }
+            .webhook-row { flex-wrap: wrap; gap: 8px; }
+            .webhook-row .wh-url { width: 100%; order: 3; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="screenLogin">
+    <div class="login-box">
+        <div class="login-header">
+            <div class="logo">🛵</div>
+            <h1>Delivery <span>Hub</span></h1>
+            <p>Conecta tu POS con las plataformas de delivery</p>
+        </div>
+        <div class="login-card">
+            <label>URL de tu POS</label>
+            <input type="url" id="posUrl" placeholder="https://tu-restaurante.arnet.mx" value="https://pos.arnet.mx">
+            <label>Usuario admin</label>
+            <input type="text" id="loginUser" placeholder="admin" value="admin">
+            <label>Contraseña</label>
+            <input type="password" id="loginPass" placeholder="••••••" value="1234">
+            <button class="btn-login" id="btnLogin" onclick="login()">🔗 Conectar POS</button>
+            <div class="login-error" id="loginError"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="screenDashboard">
+    <div class="topbar">
+        <h2>🛵 Delivery <span>Hub</span></h2>
+        <div class="topbar-right">
+            <span class="pos-badge">POS: <strong id="dashPosUrl">—</strong></span>
+            <span class="pos-badge" id="dashUserBadge">👤 admin</span>
+            <button class="btn-logout" onclick="logout()">✕ Salir</button>
+        </div>
+    </div>
+    <div class="dash-content">
+
+        <!-- Stats -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card"><div class="stat-label">Pedidos delivery hoy</div><div class="stat-value" id="statHoy">—</div></div>
+            <div class="stat-card"><div class="stat-label">Servicios activos</div><div class="stat-value" id="statServicios">—</div></div>
+            <div class="stat-card"><div class="stat-label">Total facturado delivery</div><div class="stat-value" id="statTotal">—</div></div>
+            <div class="stat-card"><div class="stat-label">Repartidores</div><div class="stat-value" id="statRepartidores">—</div></div>
+        </div>
+
+        <!-- Servicios Delivery -->
+        <div class="section-title">📡 Servicios de delivery</div>
+        <div class="services-grid" id="servicesGrid">
+            <div class="service-card" data-plat="rappi" onclick="toggleService('rappi')">
+                <div class="s-icon">🟡</div>
+                <div class="s-info"><div class="s-name">Rappi</div><div class="s-status off" id="s-rappi">Desactivado</div></div>
+                <div class="s-toggle" id="t-rappi">○</div>
+            </div>
+            <div class="service-card" data-plat="ubereats" onclick="toggleService('ubereats')">
+                <div class="s-icon">🟢</div>
+                <div class="s-info"><div class="s-name">Uber Eats</div><div class="s-status off" id="s-ubereats">Desactivado</div></div>
+                <div class="s-toggle" id="t-ubereats">○</div>
+            </div>
+            <div class="service-card" data-plat="didi" onclick="toggleService('didi')">
+                <div class="s-icon">🔵</div>
+                <div class="s-info"><div class="s-name">Didi Food</div><div class="s-status off" id="s-didi">Desactivado</div></div>
+                <div class="s-toggle" id="t-didi">○</div>
+            </div>
+            <div class="service-card" data-plat="menudigital" onclick="toggleService('menudigital')">
+                <div class="s-icon">📱</div>
+                <div class="s-info"><div class="s-name">Menú Digital</div><div class="s-status on" id="s-menudigital">Activo</div></div>
+                <div class="s-toggle" id="t-menudigital">✓</div>
+            </div>
+        </div>
+
+        <!-- Webhooks -->
+        <div class="section-title">🔗 Webhooks (URLs para conectar)</div>
+        <div class="webhook-section" id="webhookList">
+            <div class="webhook-row">
+                <span class="wh-name"><span class="badge-rappi">Rappi</span></span>
+                <span class="wh-url"><span class="inactive" id="wh-rappi">https://pos.arnet.mx/api/delivery/rappi</span></span>
+                <button class="btn-copy" onclick="copiar('rappi')">Copiar</button>
+            </div>
+            <div class="webhook-row">
+                <span class="wh-name"><span class="badge-ubereats">Uber Eats</span></span>
+                <span class="wh-url"><span class="inactive" id="wh-ubereats">https://pos.arnet.mx/api/delivery/ubereats</span></span>
+                <button class="btn-copy" onclick="copiar('ubereats')">Copiar</button>
+            </div>
+            <div class="webhook-row">
+                <span class="wh-name"><span class="badge-didi">Didi Food</span></span>
+                <span class="wh-url"><span class="inactive" id="wh-didi">https://pos.arnet.mx/api/delivery/didi</span></span>
+                <button class="btn-copy" onclick="copiar('didi')">Copiar</button>
+            </div>
+            <div class="webhook-row">
+                <span class="wh-name">📱 Menú Digital</span>
+                <span class="wh-url"><span class="active">https://pos.arnet.mx/pedidos</span></span>
+                <button class="btn-copy" onclick="copiar('menudigital_url')">Copiar</button>
+            </div>
+        </div>
+
+        <!-- Pedidos Delivery -->
+        <div class="section-title">📦 Últimos pedidos delivery</div>
+        <div class="orders-list" id="ordersList">
+            <div class="no-orders"><div class="icon">📭</div><div>Cargando pedidos...</div></div>
+        </div>
+    </div>
+</div>
+
+<script>
+const API_BASE = window.location.origin + '/api';
+let session = { url: '', user: '', pass: '', authed: false };
+let serviciosActivos = ['menudigital'];
+
+const PLAT_INFO = {
+    rappi: { icon: '🟡', name: 'Rappi', badge: 'badge-rappi' },
+    ubereats: { icon: '🟢', name: 'Uber Eats', badge: 'badge-ubereats' },
+    didi: { icon: '🔵', name: 'Didi Food', badge: 'badge-didi' },
+    menudigital: { icon: '📱', name: 'Menú Digital', badge: '' }
+};
+
+async function login() {
+    const url = document.getElementById('posUrl').value.trim().replace(/\/+$/, '');
+    const user = document.getElementById('loginUser').value.trim();
+    const pass = document.getElementById('loginPass').value.trim();
+    const btn = document.getElementById('btnLogin');
+    const err = document.getElementById('loginError');
+
+    if (!url || !user || !pass) {
+        err.textContent = 'Completa todos los campos';
+        err.classList.add('show');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Autenticando...';
+    err.classList.remove('show');
+
+    // Probar autenticación contra el POS
+    try {
+        const res = await fetch(url + '/api/delivery/verify-login', {
+            headers: { 'Authorization': 'Basic ' + btoa(user + ':' + pass) }
+        });
+        if (res.status === 401 || res.status === 403) {
+            throw new Error('Credenciales inválidas');
+        }
+        if (!res.ok) {
+            const txt = await res.text();
+            throw new Error(txt.slice(0, 80) || 'Error de conexión');
+        }
+        // Login exitoso
+        session = { url, user, pass, authed: true };
+        localStorage.setItem('delivery_session', JSON.stringify(session));
+        mostrarDashboard();
+    } catch (e) {
+        err.textContent = '❌ ' + (e.message || 'No se pudo conectar al POS');
+        err.classList.add('show');
+    }
+    btn.disabled = false;
+    btn.textContent = '🔗 Conectar POS';
+}
+
+function mostrarDashboard() {
+    document.getElementById('screenLogin').classList.add('hidden');
+    document.getElementById('screenDashboard').classList.add('active');
+    document.getElementById('dashPosUrl').textContent = session.url.replace('https://', '');
+    document.getElementById('dashUserBadge').textContent = '👤 ' + session.user;
+    cargarPedidos();
+}
+
+function logout() {
+    session = { url: '', user: '', pass: '', authed: false };
+    localStorage.removeItem('delivery_session');
+    document.getElementById('screenLogin').classList.remove('hidden');
+    document.getElementById('screenDashboard').classList.remove('active');
+}
+
+function toggleService(plat) {
+    const card = document.querySelector(`.service-card[data-plat="${plat}"]`);
+    const isActive = card.classList.contains('active');
+    if (isActive) {
+        card.classList.remove('active');
+        card.querySelector('.s-status').textContent = 'Desactivado';
+        card.querySelector('.s-status').className = 's-status off';
+        card.querySelector('.s-toggle').textContent = '○';
+        serviciosActivos = serviciosActivos.filter(s => s !== plat);
+    } else {
+        card.classList.add('active');
+        card.querySelector('.s-status').textContent = 'Activo';
+        card.querySelector('.s-status').className = 's-status on';
+        card.querySelector('.s-toggle').textContent = '✓';
+        serviciosActivos.push(plat);
+    }
+    actualizarWebhooks();
+    actualizarStats();
+}
+
+function actualizarWebhooks() {
+    const map = { rappi: 'Rappi', ubereats: 'Uber Eats', didi: 'Didi Food', menudigital: 'Menú Digital' };
+    Object.entries(map).forEach(([k, label]) => {
+        const el = document.getElementById('wh-' + k);
+        if (!el) return;
+        const active = serviciosActivos.includes(k);
+        el.textContent = (active ? '✅ ' : '⬜ ') + (k === 'menudigital_url' ? window.location.origin + '/pedidos' : window.location.origin + '/api/delivery/' + k);
+        el.className = active ? 'active' : 'inactive';
+    });
+}
+
+function actualizarStats() {
+    document.getElementById('statServicios').textContent = serviciosActivos.length;
+}
+
+async function cargarPedidos() {
+    const list = document.getElementById('ordersList');
+    try {
+        const res = await fetch(session.url + '/api/delivery/pedidos', {
+            headers: { 'Authorization': 'Basic ' + btoa(session.user + ':' + session.pass) }
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        let delivery = data.pedidos || [];
+
+        document.getElementById('statHoy').textContent = delivery.length;
+        document.getElementById('statTotal').textContent = '$' + delivery.reduce((s, p) => s + Number(p.total || 0), 0).toFixed(2);
+        document.getElementById('statRepartidores').textContent = '—';
+
+        if (delivery.length === 0) {
+            list.innerHTML = '<div class="no-orders"><div class="icon">📭</div><div>Aún no hay pedidos delivery</div></div>';
+            return;
+        }
+
+        list.innerHTML = delivery.slice(0, 10).map(p => {
+            const plat = (p.origen || '').replace('delivery_', '');
+            const info = PLAT_INFO[plat] || { icon: '📦', name: plat || 'Delivery' };
+            let items = '';
+            try { const prods = typeof p.productos === 'string' ? JSON.parse(p.productos) : (p.productos || []); items = prods.slice(0, 2).map(i => i.nombre).join(', ') + (prods.length > 2 ? '...' : ''); } catch(e){}
+            const total = Number(p.total || 0).toFixed(2);
+            const time = p.fecha || p.hora || '—';
+            return `<div class="order-card">
+                <div class="o-plat">${info.icon}</div>
+                <div class="o-info">
+                    <div class="o-id">#${p.id} · ${info.name} · ${p.cliente_nombre || 'Delivery'}</div>
+                    <div class="o-items">${items || 'Sin items'}</div>
+                </div>
+                <div class="o-total">$${total}</div>
+                <div class="o-time">${time.slice(0, 16)}</div>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        list.innerHTML = `<div class="no-orders"><div class="icon">⚠️</div><div>Error al cargar pedidos: ${e.message}</div></div>`;
+    }
+}
+
+function copiar(plat) {
+    const el = document.getElementById('wh-' + plat);
+    if (!el) return;
+    const url = window.location.origin + '/api/delivery/' + plat;
+    navigator.clipboard.writeText(url).then(() => {
+        mostrarToast('✅ URL copiada: ' + url);
+    }).catch(() => {
+        mostrarToast('📋 ' + url);
+    });
+}
+
+function mostrarToast(msg) {
+    const t = document.getElementById('toastMsg') || (() => {
+        const d = document.createElement('div');
+        d.id = 'toastMsg';
+        d.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 24px;border-radius:10px;z-index:9999;font-size:.9rem;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none;';
+        document.body.appendChild(d);
+        return d;
+    })();
+    t.textContent = msg;
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// Restaurar sesión previa
+document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('delivery_session');
+    if (saved) {
+        try {
+            const s = JSON.parse(saved);
+            if (s.authed && s.url) {
+                document.getElementById('posUrl').value = s.url;
+                document.getElementById('loginUser').value = s.user;
+                session = s;
+                mostrarDashboard();
+                return;
+            }
+        } catch(e) {}
+    }
+});
+</script>
+</body>
+</html>

@@ -55,6 +55,16 @@ body {
   </form>
 </div>
 <script>
+// Detectar si venimos de sesión expirada
+if(window.location.search.includes('expired=1')){
+  document.getElementById('loginError').textContent = 'Sesión expirada. Ingresa de nuevo.';
+  document.getElementById('loginError').style.display = 'block';
+}
+// Si ya hay sesión activa, ir directo al dashboard
+if(sessionStorage.getItem('auth')){
+  window.location.href = '/dashboard';
+}
+
 function doLogin(e){
   e.preventDefault();
   const u = document.getElementById('u').value.trim();

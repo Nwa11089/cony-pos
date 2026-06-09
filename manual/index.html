@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CONY POS — Documentación Técnica</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f0f23;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;line-height:1.6}
+nav{background:#1a1a2e;padding:12px 24px;display:flex;gap:20px;align-items:center;border-bottom:2px solid #dc3545}
+nav a{color:#e0e0e0;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:14px}
+nav a:hover,.nav-active{background:#dc3545;color:#fff}
+.container{max-width:960px;margin:0 auto;padding:24px}
+h1{color:#dc3545;font-size:28px;margin-bottom:8px}
+h2{color:#dc3545;font-size:22px;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid #333}
+h3{color:#ff6b6b;font-size:18px;margin:20px 0 8px}
+p,li{color:#c0c0c0;margin-bottom:8px}
+code{background:#1a1a2e;color:#ff6b6b;padding:2px 6px;border-radius:4px;font-size:13px}
+pre{background:#111128;color:#e0e0e0;padding:14px;border-radius:8px;overflow-x:auto;font-size:13px;margin:12px 0;border-left:3px solid #dc3545}
+.card{background:#1a1a2e;border-radius:10px;padding:18px;margin:14px 0}
+.card strong{color:#dc3545}
+ul{padding-left:20px}
+li{margin-bottom:4px}
+.tag{display:inline-block;background:#dc3545;color:#fff;padding:2px 10px;border-radius:12px;font-size:12px;margin:2px}
+.tag-green{background:#198754}
+.tag-blue{background:#0d6efd}
+.tag-yellow{background:#ffc107;color:#000}
+table{width:100%;border-collapse:collapse;margin:12px 0}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid #333}
+th{background:#1a1a2e;color:#dc3545}
+@media(max-width:600px){nav{flex-wrap:wrap;gap:8px}.container{padding:16px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <strong style="color:#dc3545">📘 CONY POS</strong>
+  <a href="index.html" class="nav-active">📋 Técnica</a>
+  <a href="workflow.html">🔄 Workflow</a>
+  <a href="guia.html">👣 Guía Visual</a>
+</nav>
+
+<div class="container">
+
+<h1>📘 Documentación Técnica — CONY POS</h1>
+<p>Sistema de punto de venta para restaurante de comida rápida con delivery integrado.</p>
+
+<h2>⚙️ Stack Tecnológico</h2>
+<table>
+  <tr><th>Componente</th><th>Tecnología</th></tr>
+  <tr><td>Backend</td><td><code>Python 3.12 + FastAPI</code></td></tr>
+  <tr><td>Base de datos</td><td><code>SQLite3</code> (archivo .db)</td></tr>
+  <tr><td>Frontend</td><td><code>HTML5 + JavaScript + Bootstrap 5</code> (plano, sin framework)</td></tr>
+  <tr><td>Autenticación</td><td><code>HTTP Basic Auth</code> con bcrypt</td></tr>
+  <tr><td>Servidor web</td><td><code>Caddy</code> (proxy reverso + SSL)</td></tr>
+  <tr><td>Impresión</td><td><code>print-client.py</code> en Mac local → puerto 9100</td></tr>
+  <tr><td>WhatsApp</td><td><code>OpenClaw + conybot</code></td></tr>
+</table>
+
+<h2>🗂️ Estructura de Archivos</h2>
+<div class="card">
+<pre>
+/var/www/pos+ia/clientes/
+├── demo/                    ← Entorno DEMO (pruebas)
+│   ├── backend/cony_rest/
+│   │   ├── pos_cony.py      ← Backend FastAPI (DEMO)
+│   │   └── demo_cony.db     ← Base de datos DEMO
+│   └── frontend/frontend_demo/
+│       ├── login.html        ← Pantalla de login
+│       ├── dashboard.html    ← Dashboard + Comandero
+│       ├── admin.html        ← Admin (usuarios, inv)
+│       ├── delivery.html     ← Panel Delivery
+│       ├── pedidos.html      ← Menú público digital
+│       └── repartidores.html ← Vista de repartidores
+├── cony/                    ← Entorno CONY (producción)
+    └── cony_rest/
+        ├── pos_cony.py      ← Backend FastAPI (CONY)
+        └── cony_cony.db     ← Base de datos CONY
+</pre>
+</div>
+
+<h2>🗄️ Estructura de Base de Datos</h2>
+<table>
+  <tr><th>Tabla</th><th>Descripción</th></tr>
+  <tr><td><code>usuarios</code></td><td>Usuarios del sistema con rol (superuser, admin, user, repartidor)</td></tr>
+  <tr><td><code>productos</code></td><td>Catálogo: nombre, precio, categoría, <span class="tag tag-green">es_ingrediente</span>, stock, stock_minimo, unidad</td></tr>
+  <tr><td><code>recetas</code></td><td><span class="tag tag-green">NUEVO</span> Relación platillo → ingrediente + cantidad</td></tr>
+  <tr><td><code>complementos</code></td><td>Complementos/ingredientes base</td></tr>
+  <tr><td><code>producto_complementos</code></td><td>Complementos por producto</td></tr>
+  <tr><td><code>clasificaciones</code></td><td>Categorías de productos</td></tr>
+  <tr><td><code>clasificaciones_superiores</code></td><td>Familias de categorías</td></tr>
+  <tr><td><code>pedidos</code></td><td>Pedidos: folio, productos, total, método pago, estado</td></tr>
+  <tr><td><code>clientes</code></td><td>Clientes frecuentes por teléfono</td></tr>
+  <tr><td><code>cortes</code></td><td>Control de cortes de caja</td></tr>
+  <tr><td><code>impresoras_cola</code></td><td>Cola de impresión (pendiente → impreso)</td></tr>
+  <tr><td><code>impresoras_config</code></td><td>Configuración de impresoras por tipo (caja, cocina)</td></tr>
+  <tr><td><code>metricas</code></td><td>Estadísticas diarias</td></tr>
+</table>
+
+<h2>🧩 Endpoints de API</h2>
+<table>
+  <tr><th>Endpoint</th><th>Método</th><th>Descripción</th><th>Auth</th></tr>
+  <tr><td><code>/api/productos</code></td><td>GET</td><td>Listar todos los productos</td><td>Sí</td></tr>
+  <tr><td><code>/api/productos/{id}</code></td><td>PUT</td><td>Actualizar producto</td><td>Sí</td></tr>
+  <tr><td><code>/api/productos</code></td><td>POST</td><td>Crear producto (acepta <code>es_ingrediente</code>)</td><td>Sí</td></tr>
+  <tr><td><code>/api/productos/{id}</code></td><td>DELETE</td><td>Eliminar producto</td><td>Sí</td></tr>
+  <tr><td><code>/api/productos/ingredientes</code></td><td>GET</td><td><span class="tag tag-green">NUEVO</span> Solo productos ingredientes</td><td>Sí</td></tr>
+  <tr><td><code>/api/recetas/{id}</code></td><td>GET</td><td><span class="tag tag-green">NUEVO</span> Ingredientes de un platillo</td><td>Sí</td></tr>
+  <tr><td><code>/api/recetas/{id}</code></td><td>POST</td><td><span class="tag tag-green">NUEVO</span> Guardar receta de un platillo</td><td>Admin</td></tr>
+  <tr><td><code>/api/inventario</code></td><td>GET</td><td><span class="tag tag-green">NUEVO</span> Inventario con alertas bajo stock</td><td>Sí</td></tr>
+  <tr><td><code>/api/inventario/{id}</code></td><td>PUT</td><td><span class="tag tag-green">NUEVO</span> Ajustar stock manualmente</td><td>Admin</td></tr>
+  <tr><td><code>/api/menu</code></td><td>GET</td><td>Menú público (excluye ingredientes)</td><td>No</td></tr>
+  <tr><td><code>/api/pedidos</code></td><td>GET</td><td>Listar pedidos</td><td>Sí</td></tr>
+  <tr><td><code>/api/comandar_directo</code></td><td>POST</td><td>Registrar pedido desde caja</td><td>Sí</td></tr>
+  <tr><td><code>/api/delivery/*</code></td><td>*</td><td>Webhooks y gestión de delivery</td><td>Variable</td></tr>
+</table>
+
+<h2>🖥️ Dominios y Puertos</h2>
+<table>
+  <tr><th>Dominio</th><th>Puerto</th><th>Entorno</th></tr>
+  <tr><td><code>pos.arnet.mx</code></td><td>:8204</td><td>DEMO (pruebas)</td></tr>
+  <tr><td><code>cony.pos.arnet.mx</code></td><td>:8200</td><td>CONY (producción)</td></tr>
+  <tr><td><code>system.arnet.mx</code></td><td>:8100</td><td>Sistema Maestro</td></tr>
+</table>
+
+<h2>⚡ Servicios Systemd</h2>
+<div class="card">
+<pre>
+demo-pos.service     → Backend DEMO (:8204)
+cony-pos.service     → Backend CONY (:8200)
+conybot.service      → Bot WhatsApp
+conyqr.service       → Generador QR
+webhook-cony.service → Webhooks delivery
+</pre>
+<p><strong>Comandos útiles:</strong></p>
+<pre>
+# Ver estado
+systemctl status demo-pos.service
+
+# Ver logs
+journalctl -u demo-pos.service -n 50 --no-pager
+
+# Reiniciar
+systemctl restart demo-pos.service
+</pre>
+</div>
+
+<h2>🚀 Deploy: De DEMO a CONY</h2>
+<div class="card">
+<p><strong>⚠️ Siempre probar en DEMO antes de pasar a CONY.</strong></p>
+<pre>
+# 1. Respaldar CONY
+cp /var/www/pos+ia/clientes/cony/cony_rest/pos_cony.py /backup/pos_cony_$(date +%Y%m%d).py
+cp /var/www/pos+ia/clientes/cony/cony_rest/cony_cony.db /backup/cony_cony_$(date +%Y%m%d).db
+
+# 2. Copiar backend DEMO → CONY
+cp /var/www/pos+ia/clientes/demo/backend/cony_rest/pos_cony.py \
+   /var/www/pos+ia/clientes/cony/cony_rest/pos_cony.py
+
+# 3. Migrar BD (solo esquema nuevo)
+sqlite3 /var/www/pos+ia/clientes/cony/cony_rest/cony_cony.db "
+ALTER TABLE productos ADD COLUMN es_ingrediente INTEGER DEFAULT 0;
+ALTER TABLE productos ADD COLUMN stock REAL DEFAULT 0;
+ALTER TABLE productos ADD COLUMN stock_minimo REAL DEFAULT 0;
+ALTER TABLE productos ADD COLUMN unidad TEXT DEFAULT 'pieza';
+ALTER TABLE productos ADD COLUMN descripcion TEXT DEFAULT '';
+CREATE TABLE IF NOT EXISTS recetas (...);
+"
+
+# 4. Copiar frontend
+cp /var/www/pos+ia/clientes/demo/frontend/frontend_demo/*.html \
+   /var/www/pos+ia/clientes/cony/frontend/*.html
+
+# 5. Reiniciar CONY
+systemctl restart cony-pos.service
+</pre>
+</div>
+
+<h2>🔐 Roles de Usuario</h2>
+<table>
+  <tr><th>Rol</th><th>Permisos</th></tr>
+  <tr><td><span class="tag tag-yellow">superuser</span></td><td>Acceso total. Puede todo.</td></tr>
+  <tr><td><span class="tag tag-blue">admin</span></td><td>Gestión de productos, usuarios, inventario, cortes</td></tr>
+  <tr><td><span class="tag tag-green">user</span></td><td>Tomar pedidos, ver dashboard. No edita productos.</td></tr>
+  <tr><td><span class="tag">repartidor</span></td><td>Ver pedidos asignados, cambiar estado a entregado</td></tr>
+</table>
+
+<h2>🖨️ Impresión</h2>
+<p>El sistema usa una cola SQL (<code>impresoras_cola</code>). El <code>print-client.py</code> corre en la Mac local del restaurante y consulta la cola periódicamente.</p>
+<p><strong>Impresoras:</strong></p>
+<ul>
+  <li><strong>Caja</strong> (<code>.68</code>) — Ticket para el cliente (puerto 9100)</li>
+  <li><strong>Cocina</strong> (<code>.69</code>) — Comanda para cocina (puerto 9100)</li>
+</ul>
+
+<h2>📦 Webhooks Delivery</h2>
+<p>El sistema recibe pedidos de delivery a través de webhooks HTTP POST:</p>
+<ul>
+  <li><code>/api/delivery/recibir</code> — Recibe pedido de app externa</li>
+  <li><code>/api/delivery/autorizar</code> — Autoriza pedido pendiente</li>
+  <li><code>/api/delivery/asignar</code> — Asigna repartidor</li>
+</ul>
+
+</div>
+</body>
+</html>

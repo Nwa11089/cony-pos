@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CONY POS — Workflow Operativo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f0f23;color:#e0e0e0;font-family:system-ui,-apple-system,sans-serif;line-height:1.6}
+nav{background:#1a1a2e;padding:12px 24px;display:flex;gap:20px;align-items:center;border-bottom:2px solid #dc3545}
+nav a{color:#e0e0e0;text-decoration:none;padding:6px 14px;border-radius:6px;font-size:14px}
+nav a:hover,.nav-active{background:#dc3545;color:#fff}
+.container{max-width:960px;margin:0 auto;padding:24px}
+h1{color:#dc3545;font-size:28px;margin-bottom:8px}
+h2{color:#dc3545;font-size:22px;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid #333}
+h3{color:#ff6b6b;font-size:18px;margin:20px 0 8px}
+p{color:#c0c0c0;margin-bottom:8px}
+code{background:#1a1a2e;color:#ff6b6b;padding:2px 6px;border-radius:4px;font-size:13px}
+pre{background:#111128;color:#e0e0e0;padding:14px;border-radius:8px;overflow-x:auto;font-size:13px;margin:12px 0;border-left:3px solid #dc3545}
+.card{background:#1a1a2e;border-radius:10px;padding:18px;margin:14px 0}
+.card strong{color:#dc3545}
+.step{display:flex;gap:14px;margin:14px 0;padding:14px;background:#1a1a2e;border-radius:10px;border-left:4px solid #dc3545}
+.step-num{background:#dc3545;color:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0}
+.step-body{flex:1}
+.step-body strong{color:#ff6b6b;display:block;margin-bottom:4px}
+.diagram{background:#111128;border-radius:10px;padding:20px;margin:16px 0;overflow-x:auto;font-family:monospace;font-size:12px;line-height:1.8;border:1px solid #333}
+.tag-flow{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px}
+.tag-green{background:#198754;color:#fff}
+.tag-blue{background:#0d6efd;color:#fff}
+.tag-yellow{background:#ffc107;color:#000}
+.tag-red{background:#dc3545;color:#fff}
+@media(max-width:600px){nav{flex-wrap:wrap;gap:8px}.container{padding:16px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <strong style="color:#dc3545">📘 CONY POS</strong>
+  <a href="index.html">📋 Técnica</a>
+  <a href="workflow.html" class="nav-active">🔄 Workflow</a>
+  <a href="guia.html">👣 Guía Visual</a>
+</nav>
+
+<div class="container">
+
+<h1>🔄 Workflow Operativo — CONY POS</h1>
+<p>Diagramas de flujo del sistema: cómo funciona cada proceso de principio a fin.</p>
+
+<!-- ============================================================ -->
+<h2>🏪 Flujo Principal: Pedido en Caja</h2>
+
+<div class="diagram">
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                      INICIO DEL DÍA                             │
+  │                    Abrir Corte de Caja                          │
+  └──────────────────────────────────────────────────────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────┐
+              │      1️⃣  CLIENTE LLEGA            │
+              │   Mesero saluda y toma orden       │
+              └───────────────────────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────┐
+              │      2️⃣  SELECCIONAR PRODUCTOS     │
+              │   En Comandero: click en categoría │
+              │   click en producto → se agrega    │
+              │   Ajustar cantidad si es necesario │
+              └───────────────────────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────┐
+              │      3️⃣  COBRAR / ENVIAR           │
+              │   Elegir: "Cobrar" o "Enviar a     │
+              │   cocina". Seleccionar método de    │
+              │   pago (Efectivo, Tarjeta, etc.)   │
+              └───────────────────────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────┐
+              │      4️⃣  SE IMPRIME                │
+              │   Ticket en caja (cliente)         │
+              │   Comanda en cocina (cocineros)    │
+              └───────────────────────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────┐
+              │      5️⃣  COCINA PREPARA            │
+              │   Cocina ve la comanda impresa     │
+              │   Prepara el pedido                │
+              │   Cambia estado a "Completado"     │
+              └───────────────────────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────┐
+              │      6️⃣  ENTREGAR AL CLIENTE       │
+              │   Mesero lleva el pedido           │
+              │   Cambia estado a "Entregado"      │
+              └───────────────────────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────┐
+              │      7️⃣  FIN DEL DÍA               │
+              │   Cerrar Corte de Caja             │
+              │   Sistema calcula totales          │
+              │   Corte con efectivo + tarjeta     │
+              └───────────────────────────────────┘
+</div>
+
+<div class="step">
+  <div class="step-num">1</div>
+  <div class="step-body">
+    <strong>🔓 Abrir Corte</strong>
+    El cajero/admin va a Dashboard → "Abrir Corte". Ingresa el fondo inicial en efectivo. Sin corte abierto no se pueden registrar pedidos.
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">2</div>
+  <div class="step-body">
+    <strong>📋 Tomar Pedido</strong>
+    En el comandero, seleccionar categoría (Hot dogs, Hamburguesas, etc.). Click en cada producto para agregarlo a la cuenta. Se puede ajustar cantidad y agregar notas.
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">3</div>
+  <div class="step-body">
+    <strong>💳 Cobrar</strong>
+    Click "Cobrar" o "Enviar a Cocina". Elegir método de pago. El sistema descuenta inventario automáticamente si el producto tiene receta (ingredientes definidos).
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-num">4</div>
+  <div class="step-body">
+    <strong>🧾 Imprimir</strong>
+    El pedido se encola en la BD. El print-client en la Mac local lo toma y lo imprime en la impresora correspondiente (caja o cocina según el rol).
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<h2>📱 Flujo Delivery (Pedidos Web)</h2>
+
+<div class="diagram">
+  ┌─────────────────────────────────────────────────────────────┐
+  │        1️⃣  LLEGA PEDIDO  (Rappi / Uber / Web / WhatsApp)   │
+  │               Webhook → /api/delivery/recibir               │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │        2️⃣  PENDIENTE AUTORIZACIÓN                          │
+  │     Aparece en Panel Delivery con estado:                   │
+  │     "⏳ Pendiente Autorizar"                               │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │        3️⃣  AUTORIZAR PEDIDO                                │
+  │     Admin revisa, confirma pago, da click en "Autorizar"   │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │        4️⃣  COCINA PREPARA                                  │
+  │     Se imprime comanda en cocina                            │
+  │     Cocina prepara y cambia a "Preparado"                  │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │        5️⃣  ASIGNAR REPARTIDOR                              │
+  │     Admin asigna repartidor disponible                     │
+  │     Estado: "En Reparto"                                   │
+  └─────────────────────────────────────────────────────────────┘
+                                │
+                                ▼
+  ┌─────────────────────────────────────────────────────────────┐
+  │        6️⃣  ENTREGADO                                       │
+  │     Repartidor confirma entrega                            │
+  │     Estado: "Entregado" → Corte actualizado                │
+  └─────────────────────────────────────────────────────────────┘
+</div>
+
+<!-- ============================================================ -->
+<h2>📦 Flujo de Inventario (Nuevo)</h2>
+
+<div class="diagram">
+  ┌───────────────────────────────────────────────────────────────┐
+  │ 1️⃣  REGISTRAR INGREDIENTES                                   │
+  │     Dashboard → Productos → Nuevo producto                    │
+  │     Marcar "🧂 Es ingrediente" → llenar stock, unidad        │
+  │     Estos NO aparecen en el comandero ni menú público        │
+  └───────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+  ┌───────────────────────────────────────────────────────────────┐
+  │ 2️⃣  ASIGNAR RECETA                                           │
+  │     En cada platillo (ej: Hot Dog):                           │
+  │     Click botón "🧂 Ingredientes"                             │
+  │     Seleccionar qué ingredientes lo componen y cantidades    │
+  │     Guardar receta                                            │
+  └───────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+  ┌───────────────────────────────────────────────────────────────┐
+  │ 3️⃣  SE VENDE                                                 │
+  │     Cajero vende 2 Hot Dogs                                   │
+  └───────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+  ┌───────────────────────────────────────────────────────────────┐
+  │ 4️⃣  SE DESCUENTA AUTOMÁTICAMENTE                             │
+  │     Pan para hot dog:  -2 (stock actualizado)                │
+  │     Salchicha:          -2 (stock actualizado)                │
+  └───────────────────────────────────────────────────────────────┘
+                                 │
+                                 ▼
+  ┌───────────────────────────────────────────────────────────────┐
+  │ 5️⃣  ALERTA SI STOCK BAJO                                     │
+  │     Si un ingrediente llega a su "stock mínimo"               │
+  │     Aparece advertencia en Admin → Inventario                │
+  │     Ej: "🧂 Pan para hot dog — ¡Stock bajo! (8 restantes)"   │
+  └───────────────────────────────────────────────────────────────┘
+</div>
+
+<!-- ============================================================ -->
+<h2>🔄 Flujo de Roles</h2>
+<div class="card">
+<table>
+  <tr><th>Rol</th><th>Puede hacer</th><th>No puede hacer</th></tr>
+  <tr>
+    <td><span class="tag-flow tag-yellow">Superuser</span></td>
+    <td>Todo: crear/eliminar usuarios, editar inventario, ver todo</td>
+    <td>Nada. Es el nivel máximo.</td>
+  </tr>
+  <tr>
+    <td><span class="tag-flow tag-blue">Admin</span></td>
+    <td>Gestión de productos, inventario, usuarios, cortes, delivery</td>
+    <td>No puede eliminar usuarios superuser</td>
+  </tr>
+  <tr>
+    <td><span class="tag-flow tag-green">User</span></td>
+    <td>Tomar pedidos, ver dashboard, ver delivery</td>
+    <td>No puede crear/editar productos ni usuarios</td>
+  </tr>
+  <tr>
+    <td><span class="tag-flow tag-red">Repartidor</span></td>
+    <td>Ver pedidos asignados, cambiar estado a entregado</td>
+    <td>No puede tomar pedidos ni ver administración</td>
+  </tr>
+</table>
+</div>
+
+<!-- ============================================================ -->
+<h2>⏱️ Timeline del Día</h2>
+<div class="card">
+<pre>
+09:00  🔓 Abrir corte de caja (fondo inicial: $500)
+09:30  🍔 Primer pedido del día
+12:00  🚚 Llega pedido delivery (Rappi)
+12:05  ✅ Se autoriza y cocina prepara
+12:20  🛵 Repartidor asignado — sale a entregar
+14:00  ⚠️ Alerta: Pan para hot dog bajo de stock
+14:10  📦 Se ajusta inventario manualmente
+18:00  ⬆️ Hora pico — múltiples pedidos simultáneos
+21:00  🛑 Último pedido del día
+21:30  💰 Cerrar corte de caja — reporte final
+</pre>
+</div>
+
+</div>
+</body>
+</html>
