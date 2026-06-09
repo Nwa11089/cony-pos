@@ -1,22 +1,32 @@
-# CONY POS 🧾
+# 🧪 Semillero — CONY POS
 
-Sistema POS para restaurante CONY con FastAPI + SQLite.
+Sistema POS para restaurantes con delivery integrado.
 
-## Stack
-- **Backend:** Python FastAPI (puerto 8200)
-- **Frontend:** HTML/CSS/JS (dashboard, admin, login)
-- **Base de datos:** SQLite
-- **Autenticación:** Basic Auth + bcrypt
+## Estado actual
+- **Stack:** Python FastAPI + SQLite + HTML/JS plano
+- **Demo:** `pos.arnet.mx` (:8204)
+- **Producción (CONY):** `cony.pos.arnet.mx` (:8200)
+- **Manual:** `arnet.mx/manual`
 
-## Funcionalidades
-- 🧑‍🍳 Comandero (menú, carrito, personalización)
-- 🖥️ Dashboard de pedidos en tiempo real
-- 👑 Panel de administración
-- 💵 Corte de caja
-- 🖨️ Impresión de tickets y comandas
-- 📊 Control de inventario y clientes
+## Módulos activos
+- ✅ Comandero (toma de pedidos en caja)
+- ✅ Menú digital público
+- ✅ Panel Delivery (webhooks Rappi/Uber/Didi)
+- ✅ Repartidores y asignación
+- ✅ Cortes de caja
+- ✅ Impresión (cola SQL + print-client)
+- ✅ **Inventario con recetas** (productos-ingredientes, descuento automático)
+- ✅ Manual del sistema (técnico, workflow, guía visual)
 
-## Instalación
-1. Clonar repositorio
-2. Instalar dependencias: `pip install fastapi uvicorn bcrypt`
-3. Ejecutar: `python3 backend/pos_cony.py`
+## Pendientes
+- [ ] Migrar DEMO → CONY
+- [ ] Integración Clip (cobro con tarjeta real)
+- [ ] Lealtad/Cashback para clientes registrados
+- [ ] Respaldo automático a Drive
+
+## Repositorio
+- Rama `main`: código funcional
+- Rama `respaldos`: backups históricos
+
+## Última actualización
+2026-06-08 — Módulo de inventario/recetas + manual completo
